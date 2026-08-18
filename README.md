@@ -1,6 +1,8 @@
-# Palette Matcher v7
+# Palette Matcher 1.0
 
 English | 🌐 [Versión en Español](README-ES.md)
+
+> First official release. Previously developed under the internal codename "v7".
 
 An interactive, high-performance tool for **color palette matching** with advanced matching algorithms and ramp generation.
 
@@ -40,4 +42,4 @@ Free to use and modify.
 
 ---
 
-Made with 💜 by Alan
+Made with 💜 by Meteori-K Media
