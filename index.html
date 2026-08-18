@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Palette Matcher v7 — Lab matching + workers + feathering + presets</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<header>
+  <h1>PALETTE MATCHER v7</h1>
+  <span>Lab nearest-color · HSL ramps · non-chained smoothing · workers · feathering · presets</span>
+</header>
+
+<div class="layout">
+  <div class="panel">
+
+    <div class="section">
+      <h2>Paleta base</h2>
+      <div id="swatches" class="swatch-list"></div>
+      <button class="add-btn" id="addColor">+ agregar color</button>
+      <textarea id="importHexMain" placeholder="Importar hex — separados por coma o renglón&#10;#3b3178, #7ec8e3, #e8a33d"></textarea>
+      <button class="mini-btn" id="importMainBtn">Importar (reemplaza paleta)</button>
+    </div>
+
+    <div class="section">
+      <h2>Ramp por color <span class="badge">HSL — solo lightness</span></h2>
+      <div class="field">
+        <label><span>sombras — capas (multiply)</span><span id="sLayersVal">3</span></label>
+        <input type="range" id="sLayers" min="0" max="6" value="3" step="1">
+      </div>
+      <div class="field">
+        <label><span>sombras — opacidad</span><span id="sOpacityVal">35%</span></label>
+        <input type="range" id="sOpacity" min="5" max="80" value="35" step="1">
+      </div>
+      <div class="field">
+        <label><span>brillos — capas (screen)</span><span id="hLayersVal">3</span></label>
+        <input type="range" id="hLayers" min="0" max="6" value="3" step="1">
+      </div>
+      <div class="field">
+        <label><span>brillos — opacidad</span><span id="hOpacityVal">35%</span></label>
+        <input type="range" id="hOpacity" min="5" max="80" value="35" step="1">
+      </div>
+      <div class="field">
+        <label><span>preview: sombra ← base → brillo</span></label>
+        <select id="mainPreviewColor" style="margin-bottom:6px;"></select>
+        <div class="ramp-preview" id="rampPreview"></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Anti-banding</h2>
+      <div class="toggle-row">
+        <input type="checkbox" id="smoothEnabled">
+        <label for="smoothEnabled">suavizado por vecinos (mayoría, sin encadenar)</label>
+      </div>
+      <div class="field">
+        <label><span>sensibilidad (threshold)</span><span id="smoothThreshVal">15%</span></label>
+        <input type="range" id="smoothThresh" min="0" max="50" value="15" step="1">
+      </div>
+      <div class="field">
+        <label><span>vecindario</span></label>
+        <select id="neighborMode">
+          <option value="4">Cruz (4 vecinos: arriba/abajo/izq/der)</option>
+          <option value="8">Cuadro (8 vecinos, incluye diagonales)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label><span>pasadas</span><span id="passesVal">1</span></label>
+        <input type="range" id="passes" min="1" max="3" value="1" step="1">
+      </div>
+      <div class="hint">Cada pasada decide TODOS los pixeles dudosos a la vez contra el estado de la pasada anterior (no en cadena mientras recorre la imagen) — evita el efecto dominó/mancha direccional. Requiere mayoría de vecinos para voltear de familia.</div>
+      <div class="toggle-row" style="margin-top:10px;">
+        <input type="checkbox" id="dither">
+        <label for="dither">dithering (Floyd–Steinberg)</label>
+      </div>
+      <div class="hint">Dithering sigue disponible como opción independiente — útil para pixel art a distancia, menos para look de arte digital con edges duros.</div>
+    </div>
+
+    <div class="section">
+      <h2>Feathering de bordes <span class="badge">v7</span></h2>
+      <div class="toggle-row">
+        <input type="checkbox" id="featherLineartEnabled">
+        <label for="featherLineartEnabled">suavizar bordes de tinta/foreground (solo con lineart activo)</label>
+      </div>
+      <div class="toggle-row">
+        <input type="checkbox" id="featherGeneralEnabled">
+        <label for="featherGeneralEnabled">suavizar cualquier cambio de familia de color (general)</label>
+      </div>
+      <div class="field">
+        <label><span>radio</span><span id="featherRadiusVal">2</span></label>
+        <input type="range" id="featherRadius" min="0" max="6" value="2" step="1">
+      </div>
+      <div class="field">
+        <label><span>fuerza</span><span id="featherStrengthVal">40%</span></label>
+        <input type="range" id="featherStrength" min="0" max="100" value="40" step="1">
+      </div>
+      <div class="hint">Post-proceso cosmético: no cambia qué familia gana en cada pixel, solo promedia el color final con sus vecinos cerca de un borde real (de familia, o de sección de lineart). Los dos toggles son independientes y comparten radio/fuerza.</div>
+    </div>
+
+    <div class="section">
+      <h2>Escala de grises → mini paleta <span class="badge">match por luminancia</span></h2>
+      <div class="toggle-row">
+        <input type="checkbox" id="grayEnabled">
+        <label for="grayEnabled">activar detección de grises (por pixel)</label>
+      </div>
+      <div class="field">
+        <label><span>umbral de saturación</span><span id="graySatVal">12%</span></label>
+        <input type="range" id="graySat" min="0" max="40" value="12" step="1">
+      </div>
+      <div class="toggle-row">
+        <input type="checkbox" id="forceGrayscale">
+        <label for="forceGrayscale">forzar TODA la imagen a la mini paleta (ignora saturación)</label>
+      </div>
+      <div id="graySwatches" class="swatch-list"></div>
+      <button class="add-btn" id="addGrayColor">+ agregar color a mini paleta</button>
+      <textarea id="importHexGray" placeholder="Importar hex mini paleta — coma o renglón"></textarea>
+      <button class="mini-btn" id="importGrayBtn">Importar (reemplaza mini paleta)</button>
+
+      <div class="toggle-row" style="margin-top:12px;">
+        <input type="checkbox" id="graySync" checked>
+        <label for="graySync">sincronizar ramp con la paleta principal</label>
+      </div>
+      <div class="field">
+        <label><span>preview: sombra ← base → brillo</span></label>
+        <select id="grayPreviewColor" style="margin-bottom:6px;"></select>
+        <div class="ramp-preview" id="grayRampPreview"></div>
+      </div>
+      <div class="subblock" id="grayRampBlock">
+        <div class="field">
+          <label><span>sombras — capas</span><span id="gSLayersVal">0</span></label>
+          <input type="range" id="gSLayers" min="0" max="6" value="0" step="1">
+        </div>
+        <div class="field">
+          <label><span>sombras — opacidad</span><span id="gSOpacityVal">35%</span></label>
+          <input type="range" id="gSOpacity" min="5" max="80" value="35" step="1">
+        </div>
+        <div class="field">
+          <label><span>brillos — capas</span><span id="gHLayersVal">0</span></label>
+          <input type="range" id="gHLayers" min="0" max="6" value="0" step="1">
+        </div>
+        <div class="field">
+          <label><span>brillos — opacidad</span><span id="gHOpacityVal">35%</span></label>
+          <input type="range" id="gHOpacity" min="5" max="80" value="35" step="1">
+        </div>
+      </div>
+      <div class="hint">Match sigue siendo 1D por luminancia — esto solo expande cuántos tonos hay disponibles antes de ese match. Desmarca "sincronizar" para tunear el ramp de grises por separado del de color.</div>
+    </div>
+
+    <div class="section">
+      <h2>Foreground / lineart <span class="badge">v6</span></h2>
+      <div class="toggle-row">
+        <input type="checkbox" id="lineartEnabled">
+        <label for="lineartEnabled">activar detección de lineart + recoloreo por sección</label>
+      </div>
+      <div class="toggle-row">
+        <input type="checkbox" id="noRealBackground">
+        <label for="noRealBackground">forzar TODO lo elegible a foreground (omitir el chequeo "¿se parece más a la base?")</label>
+      </div>
+      <div class="hint">Sin esto, cualquier sección elegible cuyo color quede más cerca de tu paleta base que de la foreground se descarta asumiendo que es "fondo asomándose por un hueco de la pose" — útil cuando de verdad hay un fondo pintado detrás del personaje. Actívalo si quieres que TODO el personaje (piel, pelo, etc. incluidos) se recoloree con foreground aunque comparta tonos con tu paleta base — el filtro de "toca el borde"/"área máxima" sigue aplicando igual, así que el fondo real (que casi siempre toca los bordes) se sigue excluyendo solo; el único costo es que huecos genuinos en la pose (ej. entre brazo y torso) también se fuerzan a color de personaje en vez de dejarse como fondo.</div>
+      <div class="toggle-row">
+        <input type="checkbox" id="excludeRealBgMatches">
+        <label for="excludeRealBgMatches">además, excluir secciones que se parezcan al fondo REAL muestreado de esta imagen</label>
+      </div>
+      <div class="hint">Compara cada sección candidata contra el color promedio real de las zonas que sí tocan el borde de esta imagen (no contra tu paleta base completa) — más específico, así no depende de que base/foreground compartan tonos con piel. Combínalo con el toggle de arriba: fuerza todo a foreground, PERO igual descarta lo que literalmente se parezca al fondo de verdad. No es perfecto — un accesorio (brazalete, anillo) completamente rodeado por piel que por casualidad se parezca al color del fondo también se excluiría. Pruébalo y si te quita algo que sí querías, apágalo para esa sección puntual.</div>
+
+      <div class="toggle-row">
+        <input type="checkbox" id="landlockedEnabled">
+        <label for="landlockedEnabled">excluir secciones "rodeadas" (landlocked) por pocos colores distintos</label>
+      </div>
+      <div class="field">
+        <label><span>máx. colores distintos alrededor para contar como rodeada</span><span id="landlockedMaxColorsVal">1</span></label>
+        <input type="range" id="landlockedMaxColors" min="1" max="4" value="1" step="1">
+      </div>
+      <div class="hint">No mira color, mira geometría: si los vecinos de una sección (a través de la tinta) se agrupan en pocos colores distintos, probablemente está embebida dentro de un solo material continuo — un hueco real en la pose, no una prenda. Cuenta por color, no por región cruda (un brazo con brazalete son 3 regiones pero solo 2 colores). En 1 (default) solo atrapa huecos rodeados por un único color; subirlo a 3-4 atrapa huecos más "complejos" (bordeados por 2-3 materiales distintos) pero también aumenta el riesgo de excluir un accesorio chico genuino. Se combina con los dos toggles de arriba, no los reemplaza.</div>
+
+      <div class="field">
+        <label><span>tonos oscuros de referencia (de la mini paleta gris)</span><span id="inkDarkNVal">3</span></label>
+        <input type="range" id="inkDarkN" min="1" max="10" value="3" step="1">
+      </div>
+      <div class="field">
+        <label><span>umbral de hue para "es tinta"</span><span id="inkHueThreshVal">30</span></label>
+        <input type="range" id="inkHueThresh" min="0" max="100" value="30" step="1">
+      </div>
+      <div class="field">
+        <label><span>luminosidad máxima para tinta</span><span id="inkMaxLVal">35%</span></label>
+        <input type="range" id="inkMaxL" min="0" max="100" value="35" step="1">
+      </div>
+      <div class="field">
+        <label><span>radio de prueba radial (px)</span><span id="inkRadiusVal">3</span></label>
+        <input type="range" id="inkRadius" min="1" max="10" value="3" step="1">
+      </div>
+      <div class="field">
+        <label><span>% para excluir sólidos (mega-secciones no son línea)</span><span id="solidRejectVal">15%</span></label>
+        <input type="range" id="solidReject" min="0" max="100" value="15" step="1">
+      </div>
+      <div class="field">
+        <label><span>% para cerrar gaps (1-2px) en la línea</span><span id="gapCloseVal">60%</span></label>
+        <input type="range" id="gapClose" min="0" max="100" value="60" step="1">
+      </div>
+      <div class="field">
+        <label><span>área máx. de sección como % de imagen</span><span id="maxRegionAreaVal">25%</span></label>
+        <input type="range" id="maxRegionArea" min="1" max="100" value="25" step="1">
+      </div>
+      <div class="field">
+        <label><span>separación de hue para mantener familias distintas</span><span id="familySepVal">40</span></label>
+        <input type="range" id="familySep" min="0" max="100" value="40" step="1">
+      </div>
+      <div class="field">
+        <label><span>máx. familias por sección</span><span id="maxFamPerRegionVal">3</span></label>
+        <input type="range" id="maxFamPerRegion" min="1" max="3" value="3" step="1">
+      </div>
+
+      <div id="fgSwatches" class="swatch-list"></div>
+      <button class="add-btn" id="addFgColor">+ agregar color a paleta foreground</button>
+      <textarea id="importHexFg" placeholder="Importar hex paleta foreground — coma o renglón"></textarea>
+      <button class="mini-btn" id="importFgBtn">Importar (reemplaza paleta foreground)</button>
+
+      <button class="mini-btn" id="analyzeFgBtn" style="margin-top:10px;">Analizar paleta → agrupar por familias de hue</button>
+      <div id="fgGroupsList" class="hint swatch-list">sin agrupar — cada color es su propia familia (comportamiento dinámico normal). Corre el análisis para fijar grupos.</div>
+
+      <div class="toggle-row" style="margin-top:12px;">
+        <input type="checkbox" id="fgSync" checked>
+        <label for="fgSync">sincronizar ramp con la paleta principal</label>
+      </div>
+      <div class="field">
+        <label><span>preview: sombra ← base → brillo</span></label>
+        <select id="fgPreviewColor" style="margin-bottom:6px;"></select>
+        <div class="ramp-preview" id="fgRampPreview"></div>
+      </div>
+      <div class="subblock" id="fgRampBlock">
+        <div class="field">
+          <label><span>sombras — capas</span><span id="fgSLayersVal">0</span></label>
+          <input type="range" id="fgSLayers" min="0" max="6" value="0" step="1">
+        </div>
+        <div class="field">
+          <label><span>sombras — opacidad</span><span id="fgSOpacityVal">35%</span></label>
+          <input type="range" id="fgSOpacity" min="5" max="80" value="35" step="1">
+        </div>
+        <div class="field">
+          <label><span>brillos — capas</span><span id="fgHLayersVal">0</span></label>
+          <input type="range" id="fgHLayers" min="0" max="6" value="0" step="1">
+        </div>
+        <div class="field">
+          <label><span>brillos — opacidad</span><span id="fgHOpacityVal">35%</span></label>
+          <input type="range" id="fgHOpacity" min="5" max="80" value="35" step="1">
+        </div>
+      </div>
+      <div class="hint">Detecta tinta por ángulo de hue (contra los tonos más oscuros de tu mini paleta gris, no por distancia directa — así un color oscuro-pero-saturado ya no se confunde con negro real) + luminosidad, agrupa el resto en secciones conectadas, y a cada sección cerrada (que no toque el borde y no sea gigante) verifica primero si se parece más a tu paleta de fondo que a la de foreground — si es así, la deja intacta (es fondo asomándose por un hueco de la pose, no una sección real del personaje). Si no, le asigna 1-3 familias dominantes de la paleta foreground, coloreando cada pixel por su luminosidad original dentro de esa familia.</div>
+    </div>
+
+    <div class="section">
+      <h2>Presets <span class="badge">v7 — localStorage</span></h2>
+      <select id="presetSelect"><option value="">— cargar preset —</option></select>
+      <div class="preset-row">
+        <input type="text" id="presetName" placeholder="nombre del preset nuevo">
+        <button id="presetSaveBtn">Guardar</button>
+        <button id="presetDeleteBtn">Borrar</button>
+      </div>
+      <div class="hint">La configuración actual se autoguarda todo el tiempo — al recargar la página vuelve tal cual la dejaste. Los presets nombrados son para guardar varios estilos y cambiar entre ellos.</div>
+    </div>
+
+    <div class="section">
+      <h2>Configuración</h2>
+      <div class="btn-row">
+        <button class="run-btn secondary" id="exportCfgBtn">Exportar .json</button>
+        <button class="run-btn secondary" id="importCfgBtn">Importar .json</button>
+      </div>
+      <input type="file" id="importCfgFile" accept=".json" style="display:none">
+    </div>
+
+  </div>
+
+
+  <div class="main">
+    <div class="tabs">
+      <div class="tab active" data-tab="single">Imagen única</div>
+      <div class="tab" data-tab="batch">Carpeta (batch)</div>
+      <div class="tab" data-tab="video">Video (frames)</div>
+    </div>
+
+    <div class="tabpanel active" id="tab-single">
+      <div class="drop" id="drop">Arrastra una imagen aquí, o haz click para elegir archivo</div>
+      <input type="file" id="fileInput" accept="image/*" style="display:none">
+      <div class="images" id="imagesGrid">
+        <figure>
+          <figcaption>original</figcaption>
+          <div class="imgwrap"><img id="srcImg" style="display:none"></div>
+        </figure>
+        <figure id="debugFigure" style="display:none">
+          <figcaption>
+            <span>diagnóstico</span>
+            <select id="debugModeSelect" style="width:auto; margin-left:8px; font-size:10.5px; padding:2px 4px;">
+              <option value="segmentation">segmentación real</option>
+              <option value="general">familia más cercana (ignora exclusiones)</option>
+            </select>
+          </figcaption>
+          <div class="imgwrap"><canvas id="debugCanvas"></canvas></div>
+        </figure>
+        <figure>
+          <figcaption>resultado</figcaption>
+          <div class="imgwrap"><canvas id="outCanvas" style="display:none"></canvas></div>
+        </figure>
+      </div>
+      <div class="hint" id="debugHint" style="display:none;">Cada color plano = una sección conectada distinta. Gris apagado = sección de fondo (toca el borde o excede el % de área máxima) o ruido, dejada intacta. Negro = parecía tinta pero el refinamiento (solidReject) lo descartó por ser relleno sólido, no línea real. Blanco = pixeles clasificados como tinta.</div>
+      <div class="hint" id="debugHintGeneral" style="display:none;">Color por familia foreground más cercana para CADA pixel que no sea tinta, ignorando si esa sección calificaría o no (toca el borde, excede el área máxima, o perdió el chequeo fondo-vs-foreground). Sirve para ver qué "querría" pasar antes de cualquier filtro.</div>
+      <button class="run-btn" id="runBtn" disabled>Procesar imagen</button>
+      <div class="stats" id="stats"></div>
+      <div class="btn-row">
+        <select id="dlFormat" style="max-width:120px;">
+          <option value="png">PNG</option>
+          <option value="jpg">JPG</option>
+        </select>
+        <a class="dl" id="dlBtn" style="display:none" download="palette-matched.png">Descargar</a>
+      </div>
+    </div>
+
+    <div class="tabpanel" id="tab-batch">
+      <div class="drop" id="folderDrop">Arrastra una carpeta aquí, o haz click para elegirla</div>
+      <input type="file" id="folderInput" webkitdirectory multiple style="display:none">
+      <div class="filelist" id="fileListBox">ningún archivo seleccionado</div>
+      <div class="field">
+        <label><span>formato de salida</span></label>
+        <select id="batchFormat">
+          <option value="same">mismo que el original</option>
+          <option value="png">forzar PNG</option>
+          <option value="jpg">forzar JPG</option>
+        </select>
+      </div>
+      <div class="progress"><div id="progressBar"></div></div>
+      <button class="run-btn" id="batchRunBtn" disabled>Procesar carpeta</button>
+      <div class="stats" id="batchStats"></div>
+      <a class="dl" id="batchDlBtn" style="display:none" download="palette-matched.zip">Descargar .zip</a>
+    </div>
+
+    <div class="tabpanel" id="tab-video">
+      <div class="drop" id="videoDrop">Arrastra un video aquí, o haz click para elegirlo</div>
+      <input type="file" id="videoInput" accept="video/*" style="display:none">
+      <div class="stats" id="videoInfo"></div>
+      <div class="field">
+        <label><span>fps para extraer frames (no se autodetecta — pon el fps real de tu fuente)</span></label>
+        <input type="number" id="videoFps" min="1" max="120" value="24" step="1">
+      </div>
+      <div class="field">
+        <label><span>formato de salida por frame</span></label>
+        <select id="videoFormat">
+          <option value="png">PNG (sin pérdida, más pesado)</option>
+          <option value="jpg">JPG</option>
+        </select>
+      </div>
+      <div class="hint">Extrae un frame cada 1/fps segundos, lo procesa con la config actual (el mismo pipeline y worker pool que batch), y arma un .zip con los frames numerados — sin audio, sin reensamblar el video. Reensambla el .zip con el fps de arriba en tu editor/ffmpeg de preferencia (ahí también le puedes volver a meter el audio original si quieres). La extracción en sí es secuencial (limitación del navegador al buscar frames), pero el procesamiento de cada frame ya sale en paralelo por los workers.</div>
+      <div class="progress"><div id="videoProgressBar"></div></div>
+      <button class="run-btn" id="videoRunBtn" disabled>Procesar video</button>
+      <div class="stats" id="videoStats"></div>
+      <a class="dl" id="videoDlBtn" style="display:none" download="palette-matched-frames.zip">Descargar .zip</a>
+    </div>
+  </div>
+</div>
+
+<script src="vendor/jszip.min.js"></script>
+<script src="js/color-math.js"></script>
+<script src="js/ramp.js"></script>
+<script src="js/matching.js"></script>
+<script src="js/feathering.js"></script>
+<script src="js/lineart.js"></script>
+<script src="js/pipeline.js"></script>
+<script src="js/worker-pool.js"></script>
+<script src="js/presets.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/single-mode.js"></script>
+<script src="js/batch-mode.js"></script>
+<script src="js/video-mode.js"></script>
+<script src="js/main.js"></script>
+
+</body>
+</html>
