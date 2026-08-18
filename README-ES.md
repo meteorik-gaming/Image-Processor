@@ -1,4 +1,4 @@
-# Palette Matcher 1.0
+# Palette Matcher v1.0
 
 🌐 [English version](README.md) | Español
 
