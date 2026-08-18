@@ -1,4 +1,4 @@
-# Palette Matcher v7
+# Palette Matcher v1.0
 
 English | 🌐 [Versión en Español](README-ES.md)
 
@@ -40,4 +40,4 @@ Free to use and modify.
 
 ---
 
-Made with 💜 by Alan
+Made with 💜 by Meteori-K Media
