@@ -1,41 +1,43 @@
 # Palette Matcher v7
 
-Una herramienta interactiva y performante para **matching de paletas de colores** con algoritmos avanzados de matching y generación de ramps.
+English | 🌐 [Versión en Español](README-ES.md)
 
-## 🎨 ¿Qué hace?
+An interactive, high-performance tool for **color palette matching** with advanced matching algorithms and ramp generation.
 
-Palette Matcher te permite trabajar con paletas de colores de forma profesional, desde importar colores base hasta generar ramps suavizados y matching automático a paletas existentes. Perfecto para diseñadores, ilustradores y desarrolladores que necesiten control fino sobre sus paletas de color.
+## 🎨 What does it do?
+
+Palette Matcher lets you work with color palettes professionally, from importing base colors to generating smoothed ramps and automatic matching against existing palettes. Perfect for designers, illustrators, and developers who need fine-grained control over their color palettes.
 
 ## ✨ Features
 
-- **Lab Color Matching** — Matching de colores usando espacio LAB para resultados perceptualmente precisos
-- **HSL Ramps** — Generación de ramps de colores solo en lightness para máximo control
-- **Multi-layer Shadows & Highlights** — Control granular sobre sombras (multiply) y brillos (screen) con capas ajustables
-- **Web Workers** — Procesamiento en background para no bloquear la UI, incluso con lotes grandes
-- **Feathering** — Suavizado avanzado de transiciones entre colores
-- **Batch Processing** — Procesar múltiples imágenes o datos en lote
-- **Video Mode** — Soporte para procesamiento de video frame-by-frame
-- **Presets** — Guardar y cargar configuraciones personalizadas
-- **Import/Export** — Importar paletas en formato HEX
-- **Non-chained Smoothing** — Suavizado independiente sin encadenamiento de efectos
+- **Lab Color Matching** — Color matching using the LAB color space for perceptually accurate results
+- **HSL Ramps** — Lightness-only ramp generation for maximum control
+- **Multi-layer Shadows & Highlights** — Granular control over shadows (multiply) and highlights (screen) with adjustable layers
+- **Web Workers** — Background processing to keep the UI responsive, even with large batches
+- **Feathering** — Advanced smoothing of transitions between colors
+- **Batch Processing** — Process multiple images or datasets in bulk
+- **Video Mode** — Support for frame-by-frame video processing
+- **Presets** — Save and load custom configurations
+- **Import/Export** — Import palettes in HEX format
+- **Non-chained Smoothing** — Independent smoothing without effect chaining
 
-## 🚀 Uso
+## 🚀 Usage
 
-1. Abre `index.html` en tu navegador
-2. Importa tu paleta base (colores separados por comas o saltos de línea)
-3. Ajusta los parámetros de ramps, sombras y brillos
-4. Usa single mode para procesar imágenes individuales o batch mode para múltiples archivos
-5. Guarda tus configuraciones favoritas como presets
+1. Open `index.html` in your browser
+2. Import your base palette (colors separated by commas or line breaks)
+3. Adjust the ramp, shadow, and highlight parameters
+4. Use single mode to process individual images or batch mode for multiple files
+5. Save your favorite configurations as presets
 
-## 📋 Requisitos
+## 📋 Requirements
 
-- Navegador moderno con soporte para Web Workers, Canvas y FileReader API
-- No requiere instalación ni dependencias externas (todo vanilla JS)
+- Modern browser with support for Web Workers, Canvas, and the FileReader API
+- No installation or external dependencies required (all vanilla JS)
 
-## 📝 Licencia
+## 📝 License
 
-Libre para usar y modificar.
+Free to use and modify.
 
 ---
 
-Hecho con 💜 por Alan
+Made with 💜 by Alan
