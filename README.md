@@ -1,16 +1,16 @@
-# Palette Matcher v1.0
+# Image Processor v1.0
 
-English | 🌐 [Versión en Español](README-ES.md)
+English | 🌐 [Versión en Español](README-ES.md) | 📝 [Changelog](CHANGELOG.md)
 
-> First official release. Previously developed under the internal codename "v7".
+> First official release. Previously developed under the internal codename "v7", and previously released and known as **Palette Matcher** — renamed to Image Processor now that it covers more than palette matching. Nothing about that history is going away, it's just no longer the whole story.
 
-An interactive, high-performance tool for **color palette matching** with advanced matching algorithms and ramp generation.
+An interactive, high-performance browser toolkit for image processing, built one focused tool at a time. Pick a tool from the tabs at the top; each one gets its own config panel (with collapsible sections, so it doesn't turn into a wall of sliders) and its own workspace. Every slider in the app supports double-click-to-type an exact value, and every tool has its own named presets.
 
-## 🎨 What does it do?
+## 🧰 Tools
 
-Palette Matcher lets you work with color palettes professionally, from importing base colors to generating smoothed ramps and automatic matching against existing palettes. Perfect for designers, illustrators, and developers who need fine-grained control over their color palettes.
+### 🎨 Palette Matcher
 
-## ✨ Features
+Work with color palettes professionally, from importing base colors to generating smoothed ramps and automatic matching against existing palettes. Perfect for designers, illustrators, and developers who need fine-grained control over their color palettes.
 
 - **Lab Color Matching** — Color matching using the LAB color space for perceptually accurate results
 - **HSL Ramps** — Lightness-only ramp generation for maximum control
@@ -23,13 +23,31 @@ Palette Matcher lets you work with color palettes professionally, from importing
 - **Import/Export** — Import palettes in HEX format
 - **Non-chained Smoothing** — Independent smoothing without effect chaining
 
+### 🔲 Pixelate
+
+Downsamples the image to a real pixel-art grid, then optionally scales it back up crisp (no blur) for export.
+
+- Independent width/height grid sliders (30–120 cells each, with a grid-lock checkbox to keep them equal) — doesn't have to match the original image's aspect ratio
+- Two color-picking methods per cell: plain **average**, or **dominant-color clustering** in Lab space (groups perceptually similar shades so fine gradient shading still finds a majority color instead of needing an exact repeated pixel)
+- Upscale factor (1×–10×, nearest-neighbor) to export the pixel art bigger without blur
+- Send the pixelated result straight into Palette Matcher to also match it against a palette — or export it standalone
+
+### 🧩 Sequence
+
+Chains other tools together: add ordered blocks, each one a tool bound to one of that tool's saved presets, then run the whole chain on a single image — one block's output feeds the next block's input.
+
+- Reorderable blocks (↑ / ↓ / ✕) — mix and match Palette Matcher and Pixelate in any order, any number of times
+- Each block runs off a **named preset** you already saved in that tool (blocks don't use whatever's currently on-screen)
+- Shows every intermediate step's result, not just the final one, so you can see what each block actually did
+- The block list itself autosaves, same as everything else
+
 ## 🚀 Usage
 
 1. Open `index.html` in your browser
-2. Import your base palette (colors separated by commas or line breaks)
-3. Adjust the ramp, shadow, and highlight parameters
-4. Use single mode to process individual images or batch mode for multiple files
-5. Save your favorite configurations as presets
+2. Pick a tool from the tabs at the top (Palette Matcher / Pixelate / Sequence)
+3. Configure it in the left panel — click a section header to collapse/expand it, double-click any slider to type an exact value
+4. Drop an image (or a folder / video, in Palette Matcher) and process it
+5. Save configurations as named presets in each tool — your last settings always autosave regardless, and named presets are what Sequence blocks run off of
 
 ## 📋 Requirements
 

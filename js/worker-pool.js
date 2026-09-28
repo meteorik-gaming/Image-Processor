@@ -122,9 +122,9 @@
         this.workers.push(w);
         this.idle.push(w);
       }
-      console.info(`[palette-matcher] usando ${this.workers.length} worker(s) en paralelo.`);
+      console.info(`[image-processor] usando ${this.workers.length} worker(s) en paralelo.`);
     } catch(err){
-      console.warn('[palette-matcher] Web Workers no disponibles, se procesará en el hilo principal:', err.message || err);
+      console.warn('[image-processor] Web Workers no disponibles, se procesará en el hilo principal:', err.message || err);
       this.usingWorkers = false;
       this.workers = [];
       this.idle = [];
@@ -144,7 +144,7 @@
       this._drain();
     };
     w.onerror = (e)=>{
-      console.error('[palette-matcher] error inesperado en worker:', e.message);
+      console.error('[image-processor] error inesperado en worker:', e.message);
     };
   };
 

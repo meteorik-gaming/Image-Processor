@@ -1,57 +1,57 @@
 // Autosave de la config en localStorage + presets nombrados. Puramente main-thread
-// (no se necesita dentro del worker). No sabe nada de DOM: ui.js le pasa el objeto plano
-// que arma currentSettings() y usa applySettings(cfg) para restaurarlo.
+// (no se necesita dentro del worker). No sabe nada de DOM: cada tool.js le pasa el objeto
+// plano que arma su currentSettings() y usa applySettings(cfg) para restaurarlo.
+// Un store por namespace (un tool = un namespace) para que cada tool tenga su propio
+// autosave/presets sin pisar los de los demás.
 (function(){
   const PM = self.PM = self.PM || {};
   const presets = PM.presets = {};
 
-  const LAST_CONFIG_KEY = 'paletteMatcher.lastConfig';
-  const PRESETS_KEY = 'paletteMatcher.presets';
-
-  function readPresetsMap(){
+  function readPresetsMap(presetsKey){
     try{
-      const raw = localStorage.getItem(PRESETS_KEY);
+      const raw = localStorage.getItem(presetsKey);
       return raw ? JSON.parse(raw) : {};
     } catch(err){ return {}; }
   }
-  function writePresetsMap(map){
-    localStorage.setItem(PRESETS_KEY, JSON.stringify(map));
+  function writePresetsMap(presetsKey, map){
+    localStorage.setItem(presetsKey, JSON.stringify(map));
   }
 
-  presets.saveLastConfig = function(settings){
-    try{ localStorage.setItem(LAST_CONFIG_KEY, JSON.stringify(settings)); }
-    catch(err){ /* localStorage lleno o deshabilitado — no es crítico, se ignora */ }
+  // namespace: prefijo de las keys de localStorage, ej. 'paletteMatcher' -> 'paletteMatcher.lastConfig'.
+  presets.createStore = function(namespace){
+    const lastConfigKey = `${namespace}.lastConfig`;
+    const presetsKey = `${namespace}.presets`;
+    return {
+      saveLastConfig(settings){
+        try{ localStorage.setItem(lastConfigKey, JSON.stringify(settings)); }
+        catch(err){ /* localStorage lleno o deshabilitado — no es crítico, se ignora */ }
+      },
+      loadLastConfig(){
+        try{
+          const raw = localStorage.getItem(lastConfigKey);
+          return raw ? JSON.parse(raw) : null;
+        } catch(err){ return null; }
+      },
+      listPresetNames(){
+        return Object.keys(readPresetsMap(presetsKey)).sort((a,b)=>a.localeCompare(b));
+      },
+      savePreset(name, settings){
+        const map = readPresetsMap(presetsKey);
+        map[name] = settings;
+        writePresetsMap(presetsKey, map);
+      },
+      loadPreset(name){
+        return readPresetsMap(presetsKey)[name] || null;
+      },
+      deletePreset(name){
+        const map = readPresetsMap(presetsKey);
+        delete map[name];
+        writePresetsMap(presetsKey, map);
+      }
+    };
   };
 
-  presets.loadLastConfig = function(){
-    try{
-      const raw = localStorage.getItem(LAST_CONFIG_KEY);
-      return raw ? JSON.parse(raw) : null;
-    } catch(err){ return null; }
-  };
-
-  presets.listPresetNames = function(){
-    return Object.keys(readPresetsMap()).sort((a,b)=>a.localeCompare(b));
-  };
-
-  presets.savePreset = function(name, settings){
-    const map = readPresetsMap();
-    map[name] = settings;
-    writePresetsMap(map);
-  };
-
-  presets.loadPreset = function(name){
-    const map = readPresetsMap();
-    return map[name] || null;
-  };
-
-  presets.deletePreset = function(name){
-    const map = readPresetsMap();
-    delete map[name];
-    writePresetsMap(map);
-  };
-
-  // debounce genérico chiquito, solo lo usa el autosave de config
+  // debounce genérico chiquito, lo usa el autosave de config de cada tool
   presets.debounce = function(fn, ms){
     let t = null;
     return function(...args){

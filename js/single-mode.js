@@ -2,6 +2,7 @@
 // resultado + debug (si lineart está activo) -> link de descarga.
 (function(){
   const PM = self.PM = self.PM || {};
+  const singleMode = PM.singleMode = {};
 
   const drop = document.getElementById('drop');
   const fileInput = document.getElementById('fileInput');
@@ -33,6 +34,9 @@
     reader.onload = ev=>{ srcImg.src = ev.target.result; srcImg.style.display='block'; runBtn.disabled=false; };
     reader.readAsDataURL(file);
   }
+  // Expuesto para que otros tools (ej. Pixelate) puedan mandar su resultado
+  // directo al Palette Matcher sin pasar por el file picker.
+  singleMode.loadFile = loadFile;
 
   async function bitmapToCanvas(blob, canvas){
     const bitmap = await createImageBitmap(blob);

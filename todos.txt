@@ -1,0 +1,5 @@
+TODO (futuro, no ahora):
+
+- Language support: la UI está hardcodeada en español (los READMEs ya son bilingües,
+  pero index.html/los strings en JS no). Agregar un toggle de idioma real (ES/EN) para
+  la interfaz cuando se retome este proyecto.

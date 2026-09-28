@@ -6,6 +6,7 @@
   const PM = self.PM = self.PM || {};
   const ui = PM.ui = {};
   const { hexToRgb, rgbToHex, rgbToLab } = PM.colorMath;
+  const store = PM.presets.createStore('paletteMatcher');
 
   let baseColors = ['#3b3178', '#7ec8e3', '#e8a33d'];
   let grayColors = ['#2b2b2b', '#6e6e6e', '#c9c9c9'];
@@ -387,14 +388,14 @@
 
   // ---------- presets nombrados + autosave ----------
   function refreshPresetSelect(){
-    const names = PM.presets.listPresetNames();
+    const names = store.listPresetNames();
     presetSelectEl.innerHTML = '<option value="">— cargar preset —</option>' +
       names.map(n=>`<option value="${n}">${n}</option>`).join('');
   }
   presetSaveBtnEl.addEventListener('click', ()=>{
     const name = presetNameEl.value.trim();
     if(!name){ alert('Ponle un nombre al preset primero.'); return; }
-    PM.presets.savePreset(name, currentSettings());
+    store.savePreset(name, currentSettings());
     presetNameEl.value = '';
     refreshPresetSelect();
     presetSelectEl.value = name;
@@ -402,78 +403,88 @@
   presetSelectEl.addEventListener('change', ()=>{
     const name = presetSelectEl.value;
     if(!name) return;
-    const cfg = PM.presets.loadPreset(name);
+    const cfg = store.loadPreset(name);
     if(cfg) applySettings(cfg);
   });
   presetDeleteBtnEl.addEventListener('click', ()=>{
     const name = presetSelectEl.value;
     if(!name) return;
     if(!confirm(`¿Borrar el preset "${name}"?`)) return;
-    PM.presets.deletePreset(name);
+    store.deletePreset(name);
     refreshPresetSelect();
   });
 
-  const scheduleAutosave = PM.presets.debounce(()=>{ PM.presets.saveLastConfig(currentSettings()); }, 400);
-  document.querySelector('.panel').addEventListener('input', scheduleAutosave);
-  document.querySelector('.panel').addEventListener('change', scheduleAutosave);
+  const scheduleAutosave = PM.presets.debounce(()=>{ store.saveLastConfig(currentSettings()); }, 400);
+  document.querySelector('#tool-palette .panel').addEventListener('input', scheduleAutosave);
+  document.querySelector('#tool-palette .panel').addEventListener('change', scheduleAutosave);
 
   // ---------- opts para el pipeline (lo que consume worker-pool.js) ----------
-  ui.currentProcessOpts = function(includeDebug){
-    const sLayers = +sLayersEl.value, sOpacityPct = +sOpacityEl.value;
-    const hLayers = +hLayersEl.value, hOpacityPct = +hOpacityEl.value;
+  // Puro: función de un objeto con la forma de currentSettings(), sin tocar DOM — así
+  // el tool Sequence puede armar opts a partir de un preset guardado sin que Palette
+  // Matcher sea el tab activo (y sin re-leer sliders que ni están montados con esos
+  // valores en ese momento).
+  ui.buildProcessOpts = function(settings, includeDebug){
+    const sLayers = settings.sLayers, sOpacityPct = settings.sOpacity;
+    const hLayers = settings.hLayers, hOpacityPct = settings.hOpacity;
+    const baseColors = settings.baseColors, grayColors = settings.grayColors;
+    const fgColors = settings.fgColors, fgGroupOf = settings.fgGroupOf;
     const { palette, labPalette, family, numFamilies } = PM.ramp.buildFullPalette(baseColors, sLayers, sOpacityPct, hLayers, hOpacityPct);
 
-    const graySync = graySyncEl.checked;
+    const graySync = settings.graySync;
     const grayPalette = PM.ramp.buildGrayFullPalette(
       grayColors,
-      graySync? sLayers : +gSLayersEl.value, graySync? sOpacityPct : +gSOpacityEl.value,
-      graySync? hLayers : +gHLayersEl.value, graySync? hOpacityPct : +gHOpacityEl.value
+      graySync? sLayers : settings.gSLayers, graySync? sOpacityPct : settings.gSOpacity,
+      graySync? hLayers : settings.gHLayers, graySync? hOpacityPct : settings.gHOpacity
     );
     const grayLum = grayPalette.map(c=>rgbToLab(c[0],c[1],c[2])[0]);
 
-    const lineartEnabled = lineartEnabledEl.checked;
-    const fgSync = fgSyncEl.checked;
+    const lineartEnabled = settings.lineartEnabled;
+    const fgSync = settings.fgSync;
     const lineartOpts = lineartEnabled ? {
       grayPaletteFull: grayPalette,
-      inkDarkN: +inkDarkNEl.value,
-      inkHueThresh: +inkHueThreshEl.value,
-      inkMaxL: +inkMaxLEl.value,
-      inkRadius: +inkRadiusEl.value,
-      solidReject: +solidRejectEl.value,
-      gapClose: +gapCloseEl.value,
-      maxRegionAreaPct: +maxRegionAreaEl.value,
-      familySep: +familySepEl.value,
-      maxFamPerRegion: +maxFamPerRegionEl.value,
-      skipBackgroundCheck: noRealBackgroundEl.checked,
-      excludeRealBackgroundMatches: excludeRealBgMatchesEl.checked,
-      landlockedEnabled: landlockedEnabledEl.checked,
-      landlockedMaxColors: +landlockedMaxColorsEl.value,
+      inkDarkN: settings.inkDarkN,
+      inkHueThresh: settings.inkHueThresh,
+      inkMaxL: settings.inkMaxL,
+      inkRadius: settings.inkRadius,
+      solidReject: settings.solidReject,
+      gapClose: settings.gapClose,
+      maxRegionAreaPct: settings.maxRegionArea,
+      familySep: settings.familySep,
+      maxFamPerRegion: settings.maxFamPerRegion,
+      skipBackgroundCheck: settings.noRealBackground,
+      excludeRealBackgroundMatches: settings.excludeRealBgMatches,
+      landlockedEnabled: settings.landlockedEnabled,
+      landlockedMaxColors: settings.landlockedMaxColors,
       bgFamilyAB: baseColors.map(hex=>{ const [,a,bb]=rgbToLab(...hexToRgb(hex)); return [a,bb]; }),
       fg: PM.ramp.buildFgFullPalette(
         fgColors, fgGroupOf,
-        fgSync? sLayers : +fgSLayersEl.value, fgSync? sOpacityPct : +fgSOpacityEl.value,
-        fgSync? hLayers : +fgHLayersEl.value, fgSync? hOpacityPct : +fgHOpacityEl.value
+        fgSync? sLayers : settings.fgSLayers, fgSync? sOpacityPct : settings.fgSOpacity,
+        fgSync? hLayers : settings.fgHLayers, fgSync? hOpacityPct : settings.fgHOpacity
       )
     } : null;
 
     return {
       palette, labPalette, family, numFamilies,
       grayPalette, grayLum,
-      grayEnabled: grayEnabledEl.checked,
-      graySatThresh: +graySatEl.value,
-      forceGrayscale: forceGrayscaleEl.checked,
-      useDither: ditherEl.checked,
-      smoothEnabled: smoothEnabledEl.checked,
-      smoothThreshPct: +smoothThreshEl.value,
-      neighborMode: neighborModeEl.value,
-      passes: +passesEl.value,
+      grayEnabled: settings.grayEnabled,
+      graySatThresh: settings.graySat,
+      forceGrayscale: settings.forceGrayscale,
+      useDither: settings.dither,
+      smoothEnabled: settings.smoothEnabled,
+      smoothThreshPct: settings.smoothThresh,
+      neighborMode: settings.neighborMode,
+      passes: settings.passes,
       lineartEnabled, lineartOpts,
       includeDebug: !!includeDebug,
-      featherGeneralEnabled: featherGeneralEl.checked,
-      featherLineartEnabled: featherLineartEl.checked,
-      featherRadius: +featherRadiusEl.value,
-      featherStrengthPct: +featherStrengthEl.value
+      featherGeneralEnabled: settings.featherGeneralEnabled,
+      featherLineartEnabled: settings.featherLineartEnabled,
+      featherRadius: settings.featherRadius,
+      featherStrengthPct: settings.featherStrength
     };
+  };
+
+  ui.currentProcessOpts = function(includeDebug){
+    return ui.buildProcessOpts(currentSettings(), includeDebug);
   };
 
   ui.currentSettings = currentSettings;
@@ -481,7 +492,7 @@
 
   // ---------- boot ----------
   ui.init = function(){
-    const last = PM.presets.loadLastConfig();
+    const last = store.loadLastConfig();
     if(last) applySettings(last);
     else { renderSwatches(); renderGraySwatches(); renderFgSwatches(); }
     updateGraySyncUI();
