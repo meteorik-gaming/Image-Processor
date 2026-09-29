@@ -1,8 +1,8 @@
-# Image Processor v1.0
+# Image Processor v1.1
 
 🌐 [English version](README.md) | Español | 📝 [Changelog](CHANGELOG-ES.md)
 
-> Primer release oficial. Anteriormente desarrollado bajo el codename interno "v7", y anteriormente lanzado y conocido como **Palette Matcher** — renombrado a Image Processor ahora que cubre más que solo matching de paletas. Esa historia no se borra, solo dejó de ser toda la historia.
+> Anteriormente desarrollado bajo el codename interno "v7", y anteriormente lanzado y conocido como **Palette Matcher** (v1.0) — renombrado a Image Processor a partir de v1.1, ahora que cubre más que solo matching de paletas. Esa historia no se borra, solo dejó de ser toda la historia. Mirá el [changelog](CHANGELOG-ES.md) para ver qué cambió.
 
 Un toolkit interactivo y performante de procesamiento de imágenes para navegador, construido una herramienta a la vez. Elige un tool desde las pestañas de arriba; cada uno tiene su propio panel de configuración (con secciones colapsables, para que no se vuelva una pared de sliders) y su propio espacio de trabajo. Todos los sliders de la app soportan doble click para escribir un valor exacto, y cada tool tiene sus propios presets nombrados.
 

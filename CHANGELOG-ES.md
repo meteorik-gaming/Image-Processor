@@ -4,7 +4,7 @@
 
 Todos los cambios importantes del proyecto quedan documentados acá.
 
-## v1.0 — Image Processor
+## v1.1 — Image Processor
 
 *Anteriormente lanzado y conocido como **Palette Matcher v1.0** (ver abajo) —
 renombrado porque la herramienta ya cubre más que solo matching de paletas.

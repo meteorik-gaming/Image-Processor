@@ -1,8 +1,8 @@
-# Image Processor v1.0
+# Image Processor v1.1
 
 English | 🌐 [Versión en Español](README-ES.md) | 📝 [Changelog](CHANGELOG.md)
 
-> First official release. Previously developed under the internal codename "v7", and previously released and known as **Palette Matcher** — renamed to Image Processor now that it covers more than palette matching. Nothing about that history is going away, it's just no longer the whole story.
+> Previously developed under the internal codename "v7", and previously released and known as **Palette Matcher** (v1.0) — renamed to Image Processor as of v1.1, now that it covers more than palette matching. Nothing about that history is going away, it's just no longer the whole story. See the [changelog](CHANGELOG.md) for what's new.
 
 An interactive, high-performance browser toolkit for image processing, built one focused tool at a time. Pick a tool from the tabs at the top; each one gets its own config panel (with collapsible sections, so it doesn't turn into a wall of sliders) and its own workspace. Every slider in the app supports double-click-to-type an exact value, and every tool has its own named presets.
 

@@ -4,7 +4,7 @@ English | 🌐 [Versión en Español](CHANGELOG-ES.md)
 
 All notable changes to this project are documented here.
 
-## v1.0 — Image Processor
+## v1.1 — Image Processor
 
 *Previously released and known as **Palette Matcher v1.0** (see below) — renamed
 because the tool now covers more than palette matching. That history isn't going
