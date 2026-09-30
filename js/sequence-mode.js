@@ -20,20 +20,23 @@
   let blocks = []; // [{tool, preset}]
   let loadedFile = null;
   let lastCanvas = null;
+  let lastText = null; // { text, ext, mime } cuando el último bloque es un tool de texto
+  let dlUrl = null;
 
   const scheduleAutosave = PM.presets.debounce(()=>{ store.saveLastConfig({ blocks }); }, 400);
 
   function updateRunEnabled(){
-    runBtn.disabled = !loadedFile || blocks.length===0 || blocks.some(b=>!b.preset);
+    runBtn.disabled = !loadedFile || blocks.length===0 || blocks.some(b=>!b.preset) || PM.validateSequence(blocks).length>0;
   }
 
   function renderBlocks(){
     blocksListEl.innerHTML = '';
     const toolIds = Object.keys(PM.pipelineTools);
+    const errorsByIndex = new Map(PM.validateSequence(blocks).map(e=>[e.index, e.message]));
 
     blocks.forEach((block, i)=>{
       const row = document.createElement('div');
-      row.className = 'seq-block';
+      row.className = 'seq-block' + (errorsByIndex.has(i) ? ' seq-block-error' : '');
 
       const toolOptions = toolIds.map(id=>
         `<option value="${id}" ${block.tool===id?'selected':''}>${PM.pipelineTools[id].label}</option>`
@@ -55,6 +58,7 @@
           </div>
         </div>
         <select class="seq-preset-select" data-i="${i}">${presetOptions}</select>
+        ${errorsByIndex.has(i) ? `<div class="seq-error">⛔ ${errorsByIndex.get(i)}</div>` : ''}
       `;
       blocksListEl.appendChild(row);
     });
@@ -130,7 +134,25 @@
     imagesGridEl.querySelectorAll('figure.seq-step').forEach(f=>f.remove());
     statsEl.innerHTML = '';
     dlBtn.style.display = 'none';
+    dlFormatEl.style.display = '';
     lastCanvas = null;
+    lastText = null;
+  }
+
+  function appendTextFigure(i, toolId, preset, result){
+    const figure = document.createElement('figure');
+    figure.className = 'seq-step';
+    const figcaption = document.createElement('figcaption');
+    figcaption.textContent = `${i+1}. ${PM.pipelineTools[toolId].label} (${preset})`;
+    const out = document.createElement('textarea');
+    out.className = 'text-output';
+    out.readOnly = true;
+    out.wrap = 'off';
+    out.spellcheck = false;
+    out.value = result.text;
+    figure.appendChild(figcaption);
+    figure.appendChild(out);
+    imagesGridEl.appendChild(figure);
   }
 
   async function appendStepFigure(i, toolId, preset, file){
@@ -159,10 +181,19 @@
     let currentFile = loadedFile;
     const stepLines = [];
     try{
+      const errors = PM.validateSequence(blocks);
+      if(errors.length) throw new Error(`Bloque ${errors[0].index+1}: ${errors[0].message}`);
       for(let i=0;i<blocks.length;i++){
         const { tool, preset } = blocks[i];
         if(!preset) throw new Error(`Bloque ${i+1}: falta elegir un preset.`);
         const t0 = performance.now();
+        if(PM.pipelineTools[tool].terminal){
+          lastText = await PM.pipelineTools[tool].runText(currentFile, preset);
+          const t1 = performance.now();
+          appendTextFigure(i, tool, preset, lastText);
+          stepLines.push(`<span>${i+1}. ${PM.pipelineTools[tool].label} (${preset}) — <b>${(t1-t0).toFixed(0)} ms</b></span>`);
+          continue;
+        }
         currentFile = await PM.pipelineTools[tool].run(currentFile, preset);
         const t1 = performance.now();
         lastCanvas = await appendStepFigure(i, tool, preset, currentFile);
@@ -179,6 +210,17 @@
   });
 
   function refreshDownloadLink(){
+    if(lastText){
+      if(dlUrl) URL.revokeObjectURL(dlUrl);
+      dlUrl = URL.createObjectURL(new Blob([lastText.text], { type:lastText.mime+';charset=utf-8' }));
+      dlBtn.href = dlUrl;
+      dlBtn.download = 'sequence-result.' + lastText.ext;
+      dlBtn.textContent = 'Descargar .' + lastText.ext;
+      dlBtn.style.display = 'inline-block';
+      dlFormatEl.style.display = 'none';
+      return;
+    }
+    dlFormatEl.style.display = '';
     if(!lastCanvas) return;
     const fmt = dlFormatEl.value;
     if(fmt==='jpg'){

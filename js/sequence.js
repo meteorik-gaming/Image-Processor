@@ -28,6 +28,33 @@
         const result = await PM.workerPool.processFile(file, opts);
         return new File([result.blob], 'step.png', { type:'image/png' });
       }
+    },
+    // Tool "terminal": su salida es texto, no imagen, así que no puede alimentar a otro
+    // bloque — solo puede ir al final. Se corre con runText en vez de run.
+    textconv: {
+      label: 'Text Converter',
+      terminal: true,
+      listPresets: () => PM.presets.createStore('textconv').listPresetNames(),
+      runText: async (file, presetName) => {
+        const settings = PM.presets.createStore('textconv').loadPreset(presetName);
+        if(!settings) throw new Error(`Text Converter: no existe el preset "${presetName}"`);
+        const { text } = await PM.textconv.fileToText(file, settings);
+        const format = settings.format || 'txt';
+        return { text, ext: PM.textconv.FORMAT_EXT[format] || 'txt', mime: PM.textconv.FORMAT_MIME[format] || 'text/plain' };
+      }
     }
+  };
+
+  // Devuelve { index, message } por cada bloque mal puesto (un tool terminal que no es el
+  // último), o [] si la secuencia es válida. Sequence lo usa para marcar error y no correr.
+  PM.validateSequence = function(blocks){
+    const errors = [];
+    blocks.forEach((b, i)=>{
+      const t = PM.pipelineTools[b.tool];
+      if(t && t.terminal && i<blocks.length-1){
+        errors.push({ index:i, message:`${t.label} produce texto, no una imagen: solo puede ir al final de la secuencia.` });
+      }
+    });
+    return errors;
   };
 })();

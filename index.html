@@ -2,20 +2,21 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Image Processor v1.1 — palette matching + pixelate</title>
+<title>Image Processor v1.2 — palette matching, pixelate + text</title>
 <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
 
 <header>
-  <h1>IMAGE PROCESSOR v1.1</h1>
-  <span>Palette Matcher · Pixelate — cada tool con su propio panel, abajo</span>
+  <h1>IMAGE PROCESSOR v1.2</h1>
+  <span>Palette Matcher · Pixelate · Sequence · Text Converter — cada tool con su propio panel, abajo</span>
 </header>
 
 <div class="tool-tabs">
+  <div class="tool-tab" data-tool="sequence">🧩 Sequence</div>
   <div class="tool-tab active" data-tool="palette">🎨 Palette Matcher</div>
   <div class="tool-tab" data-tool="pixelate">🔲 Pixelate</div>
-  <div class="tool-tab" data-tool="sequence">🧩 Sequence</div>
+  <div class="tool-tab" data-tool="textconv">🔤 Text Converter</div>
 </div>
 
 <div class="tool-view active" id="tool-palette">
@@ -492,6 +493,125 @@
 </div>
 <!-- /tool-sequence -->
 
+<div class="tool-view" id="tool-textconv">
+<div class="layout">
+  <div class="panel">
+
+    <div class="section" id="sec-textconv-palette">
+      <h2>Paleta → símbolos <span class="badge">color = texto</span></h2>
+      <div class="preset-row" style="margin-top:0;">
+        <select id="textconvCopySource" style="flex:1;">
+          <option value="base">Paleta base</option>
+          <option value="gray">Mini paleta gris</option>
+          <option value="fg">Paleta foreground</option>
+        </select>
+        <button id="textconvCopyBtn">Copiar de Palette Matcher</button>
+      </div>
+      <div id="textconvSwatches" class="swatch-list" style="margin-top:10px;"></div>
+      <button class="add-btn" id="textconvAddColor">+ agregar color</button>
+      <div class="field" style="margin-top:12px;">
+        <label><span>símbolo para pixeles transparentes</span></label>
+        <input type="text" id="textconvTransparentSymbol" class="symbol-input" value=" " placeholder="(vacío = nada)">
+      </div>
+      <div class="warn-box" id="textconvWarnings" style="display:none;"></div>
+      <div class="hint">Cada píxel de la imagen (ya reducido al grid) se convierte al símbolo del color de la paleta más cercano. El símbolo puede ser cualquier texto — un emoji cuenta como un solo carácter. Los avisos solo informan, nunca bloquean la conversión.</div>
+    </div>
+
+    <div class="section" id="sec-textconv-grid">
+      <h2>Grid <span class="badge" id="textconvSizeBadge">32 × 32</span></h2>
+      <div class="toggle-row">
+        <input type="checkbox" id="textconvNativeSize">
+        <label for="textconvNativeSize">1 símbolo por pixel (tamaño original de la imagen, sin reducir)</label>
+      </div>
+      <div class="subblock" id="textconvGridBlock">
+        <div class="field">
+          <label><span>columnas (símbolos por fila)</span><span id="textconvColsVal">32</span></label>
+          <input type="range" id="textconvCols" min="4" max="200" value="32" step="1">
+        </div>
+        <div class="field">
+          <label><span>filas</span><span id="textconvRowsVal">32</span></label>
+          <input type="range" id="textconvRows" min="4" max="200" value="32" step="1">
+        </div>
+        <div class="toggle-row">
+          <input type="checkbox" id="textconvGridLock">
+          <label for="textconvGridLock">igualar columnas y filas (grid cuadrado)</label>
+        </div>
+      </div>
+      <div class="field">
+        <label><span>cómo se elige el símbolo de cada celda</span></label>
+        <select id="textconvMethod">
+          <option value="majority">Mayoría (voto de cada pixel por color de paleta)</option>
+          <option value="mean">Promedio (promedia la celda y luego busca el más cercano)</option>
+        </select>
+      </div>
+      <div class="hint">Un carácter de texto suele ser más alto que ancho: si el resultado se ve estirado, usa más columnas que filas.</div>
+    </div>
+
+    <div class="section" id="sec-textconv-output">
+      <h2>Salida</h2>
+      <div class="field">
+        <label><span>formato</span></label>
+        <select id="textconvFormat">
+          <option value="txt">.txt (texto plano)</option>
+          <option value="csv">.csv</option>
+          <option value="json">.json (array de arrays)</option>
+        </select>
+        <div class="hint" id="textconvFormatHint"></div>
+      </div>
+      <div class="field">
+        <label><span>separador entre símbolos</span></label>
+        <select id="textconvSeparator">
+          <option value="none">ninguno (BNB)</option>
+          <option value="comma">coma (B,N,B)</option>
+          <option value="space">espacio (B N B)</option>
+          <option value="tab">tab</option>
+          <option value="custom">personalizado…</option>
+        </select>
+        <input type="text" id="textconvCustomSep" class="symbol-input" style="display:none; margin-top:6px; width:100%;" placeholder="texto entre símbolos">
+      </div>
+    </div>
+
+    <div class="section" id="sec-textconv-presets">
+      <h2>Presets <span class="badge">localStorage</span></h2>
+      <select id="textconvPresetSelect"><option value="">— cargar preset —</option></select>
+      <div class="preset-row">
+        <input type="text" id="textconvPresetName" placeholder="nombre del preset nuevo">
+        <button id="textconvPresetSaveBtn">Guardar</button>
+        <button id="textconvPresetDeleteBtn">Borrar</button>
+      </div>
+      <div class="hint">Un preset guarda la paleta con sus símbolos, el grid, el método, el formato y el separador. La configuración actual también se autoguarda.</div>
+    </div>
+
+  </div>
+
+  <div class="main">
+    <div class="drop" id="textconvDrop">Arrastra una imagen (o varias / una carpeta) aquí, o haz click para elegir archivos</div>
+    <input type="file" id="textconvFileInput" accept="image/*" multiple style="display:none">
+    <input type="file" id="textconvFolderInput" webkitdirectory multiple style="display:none">
+    <button class="mini-btn" id="textconvFolderBtn" style="margin-top:-8px;">o elegir una carpeta…</button>
+    <div class="warn-box" id="textconvWarningsMain" style="display:none;"></div>
+    <div class="images" id="textconvImagesGrid">
+      <figure>
+        <figcaption>original</figcaption>
+        <div class="imgwrap"><img id="textconvSrcImg" style="display:none"></div>
+      </figure>
+      <figure>
+        <figcaption>resultado (texto)</figcaption>
+        <textarea id="textconvOut" class="text-output" readonly wrap="off" spellcheck="false" placeholder="el texto convertido aparece aquí"></textarea>
+      </figure>
+    </div>
+    <div class="progress" id="textconvProgress" style="display:none;"><div id="textconvProgressBar"></div></div>
+    <button class="run-btn" id="textconvRunBtn" disabled>Convertir a texto</button>
+    <div class="stats" id="textconvStats"></div>
+    <div class="btn-row">
+      <button class="run-btn secondary" id="textconvCopyOutBtn" disabled>Copiar texto</button>
+      <a class="dl" id="textconvDlBtn" style="display:none; margin-top:6px;" download="text.txt">Descargar</a>
+    </div>
+  </div>
+</div>
+</div>
+<!-- /tool-textconv -->
+
 <script src="vendor/jszip.min.js"></script>
 <script src="js/color-math.js"></script>
 <script src="js/ramp.js"></script>
@@ -511,6 +631,9 @@
 <script src="js/pixelate-mode.js"></script>
 <script src="js/sequence.js"></script>
 <script src="js/sequence-mode.js"></script>
+<script src="js/textconv.js"></script>
+<script src="js/textconv-ui.js"></script>
+<script src="js/textconv-mode.js"></script>
 <script src="js/main.js"></script>
 
 </body>

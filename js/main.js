@@ -8,4 +8,5 @@
   PM.ui.init();
   PM.pixelateUi.init();
   PM.sequenceUi.init();
+  PM.textconvUi.init();
 })();

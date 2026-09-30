@@ -81,8 +81,15 @@ canvas, img{ max-width:100%; display:block; image-rendering:pixelated; }
 .hint{ font-size:10.5px; color:var(--dim); margin-top:4px; line-height:1.4; }
 .badge{ font-size:9.5px; background:var(--accent-dim); color:var(--ink); padding:1px 6px; border-radius:10px; font-family:var(--mono); }
 
+.symbol-input{ width:74px; background:var(--panel); border:1px solid var(--line); color:var(--ink); font-family:var(--mono); font-size:12px; padding:5px 6px; border-radius:4px; }
+.warn-box{ border:1px solid #6b5220; background:#2a2314; color:#e8c27a; border-radius:6px; padding:8px 10px; font-size:11px; line-height:1.45; margin-top:8px; }
+.warn-box .warn-title{ font-weight:600; margin-bottom:4px; }
+.text-output{ display:block; width:100%; min-height:260px; margin:0; border:none; border-radius:0; background:transparent; font-size:10px; line-height:1.15; white-space:pre; overflow:auto; }
+
 .seq-block{ border:1px solid var(--line); border-radius:8px; padding:8px; margin-bottom:8px; }
 .seq-block-head{ display:flex; align-items:center; gap:6px; margin-bottom:6px; }
+.seq-block.seq-block-error{ border-color:#e0637a; }
+.seq-error{ font-size:10.5px; color:#e0637a; margin-top:6px; line-height:1.4; }
 .seq-block .seq-block-num{ font-family:var(--mono); font-size:11px; color:var(--dim); width:14px; text-align:center; flex-shrink:0; }
 .seq-block-head select{ width:auto; flex:1; min-width:0; font-size:11.5px; padding:5px 6px; }
 .seq-block select.seq-preset-select{ width:100%; font-size:11.5px; padding:5px 6px; }
@@ -91,3 +98,4 @@ canvas, img{ max-width:100%; display:block; image-rendering:pixelated; }
 .seq-block-actions button:hover:not(:disabled){ color:var(--ink); background:#242231; }
 .seq-block-actions button:disabled{ opacity:.3; cursor:default; }
 .seq-block-actions button.seq-remove:hover{ color:#e0637a; background:#2a1f24; }
+.field.disabled{ opacity:.4; pointer-events:none; }

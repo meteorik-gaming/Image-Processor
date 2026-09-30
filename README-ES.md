@@ -1,4 +1,4 @@
-# Image Processor v1.1
+# Image Processor v1.2
 
 🌐 [English version](README.md) | Español | 📝 [Changelog](CHANGELOG-ES.md)
 
@@ -41,10 +41,22 @@ Encadena otros tools: agrega bloques ordenados, cada uno un tool atado a uno de 
 - Muestra el resultado de cada paso intermedio, no solo el final, para que veas qué hizo cada bloque
 - La lista de bloques se autoguarda igual que todo lo demás
 
+### 🔤 Text Converter
+
+Convierte una imagen en texto (ASCII art y similares): cada pixel se vuelve el símbolo que le asignaste a su color de paleta más cercano.
+
+- Tabla color → símbolo; los símbolos pueden ser cualquier texto (`B`, `##`, un emoji). Copia los colores de cualquiera de las 3 paletas de Palette Matcher (base / gris / foreground) y asígnales símbolos
+- Símbolo propio para pixeles transparentes
+- Sliders de grid (columnas/filas, con grid-lock) o **1 símbolo por pixel** (tamaño original de la imagen, tope de 4M de pixeles); el símbolo de cada celda se elige por mayoría o promediando la celda
+- Salida en pantalla, copiable y descargable como `.txt` (sin separador, coma, espacio, tab o personalizado), `.csv` o `.json`
+- Avisa (nunca bloquea) si dos colores comparten símbolo, si un símbolo está vacío o si tiene más de un carácter (un emoji cuenta como uno)
+- Suelta varias imágenes o una carpeta para obtener un archivo por imagen dentro de un `.zip`
+- Presets nombrados, igual que los demás tools — y usable como bloque en Sequence, **solo como último bloque** (su salida es texto, así que nada puede ir después; ponerlo antes se marca como error y bloquea la corrida)
+
 ## 🚀 Uso
 
 1. Abre `index.html` en tu navegador
-2. Elige un tool desde las pestañas de arriba (Palette Matcher / Pixelate / Sequence)
+2. Elige un tool desde las pestañas de arriba (Palette Matcher / Pixelate / Sequence / Text Converter)
 3. Configúralo en el panel izquierdo — haz click en el título de una sección para colapsarla/expandirla, doble click en cualquier slider para escribir un valor exacto
 4. Suelta una imagen (o una carpeta / video, en Palette Matcher) y procésala
 5. Guarda configuraciones como presets nombrados en cada tool — tu última config siempre se autoguarda, y los presets nombrados son con lo que corren los bloques de Sequence

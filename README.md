@@ -1,4 +1,4 @@
-# Image Processor v1.1
+# Image Processor v1.2
 
 English | 🌐 [Versión en Español](README-ES.md) | 📝 [Changelog](CHANGELOG.md)
 
@@ -41,10 +41,22 @@ Chains other tools together: add ordered blocks, each one a tool bound to one of
 - Shows every intermediate step's result, not just the final one, so you can see what each block actually did
 - The block list itself autosaves, same as everything else
 
+### 🔤 Text Converter
+
+Converts an image into text (ASCII art and the like): each pixel becomes the symbol you assigned to its closest palette color.
+
+- Color → symbol table; symbols can be any text (`B`, `##`, an emoji). Copy the colors from any of Palette Matcher's 3 palettes (base / gray / foreground) and assign symbols to them
+- Own symbol for transparent pixels
+- Grid sliders (cols/rows, with grid-lock) or **1 symbol per pixel** (original image size, capped at 4M pixels); symbol per cell picked by majority vote or by averaging the cell
+- Output shown in-app, copyable and downloadable as `.txt` (no separator, comma, space, tab or custom), `.csv` or `.json`
+- Warns (never blocks) when two colors share a symbol, a symbol is empty, or a symbol is more than one character (emojis count as one)
+- Drop several images or a folder to get one file per image in a `.zip`
+- Named presets, same as the other tools — and usable as a block in Sequence, **only as the last block** (its output is text, so nothing can follow it; placing it earlier is flagged as an error and blocks the run)
+
 ## 🚀 Usage
 
 1. Open `index.html` in your browser
-2. Pick a tool from the tabs at the top (Palette Matcher / Pixelate / Sequence)
+2. Pick a tool from the tabs at the top (Palette Matcher / Pixelate / Sequence / Text Converter)
 3. Configure it in the left panel — click a section header to collapse/expand it, double-click any slider to type an exact value
 4. Drop an image (or a folder / video, in Palette Matcher) and process it
 5. Save configurations as named presets in each tool — your last settings always autosave regardless, and named presets are what Sequence blocks run off of

@@ -4,6 +4,17 @@ English | 🌐 [Versión en Español](CHANGELOG-ES.md)
 
 All notable changes to this project are documented here.
 
+## v1.2 — Text Converter
+
+- New **Text Converter** tool: turns an image into text (ASCII art) using a
+  color → symbol table. Symbols can be any text; colors can be copied from any of
+  Palette Matcher's 3 palettes. Output as `.txt` (optional separator), `.csv` or
+  `.json`, copyable and downloadable, with a batch mode (multiple images / folder →
+  `.zip`), a symbol for transparent pixels, named presets, and non-blocking
+  warnings for duplicate, empty or multi-character symbols; optional 1 symbol per
+  pixel mode. Also available in **Sequence**, but only as the last block (flagged as
+  an error anywhere else)
+
 ## v1.1 — Image Processor
 
 *Previously released and known as **Palette Matcher v1.0** (see below) — renamed
