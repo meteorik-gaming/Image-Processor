@@ -4,6 +4,15 @@
 
 Todos los cambios importantes del proyecto quedan documentados acá.
 
+## v1.3 — Subtract
+
+- Nuevo tool **Subtract**: resta la imagen B de la imagen A (mismo tamaño exacto)
+  y exporta un PNG con solo los pixeles que difieren (umbral en Lab ΔE, bordes
+  duros), todo lo demás transparente. Quitar islas / rellenar huecos, invertir,
+  recortar al contenido, modo carpetas que empareja imágenes por nombre en un
+  `.zip`, presets nombrados. Un tamaño distinto se marca como error. No disponible
+  en Sequence
+
 ## v1.2 — Text Converter
 
 - Nuevo tool **Text Converter**: convierte una imagen en texto (ASCII art) con una

@@ -1,4 +1,4 @@
-# Image Processor v1.2
+# Image Processor v1.3
 
 English | 🌐 [Versión en Español](README-ES.md) | 📝 [Changelog](CHANGELOG.md)
 
@@ -52,6 +52,17 @@ Converts an image into text (ASCII art and the like): each pixel becomes the sym
 - Warns (never blocks) when two colors share a symbol, a symbol is empty, or a symbol is more than one character (emojis count as one)
 - Drop several images or a folder to get one file per image in a `.zip`
 - Named presets, same as the other tools — and usable as a block in Sequence, **only as the last block** (its output is text, so nothing can follow it; placing it earlier is flagged as an error and blocks the run)
+
+### ➖ Subtract
+
+Subtracts image B from image A (both exactly the same size) and returns a PNG with only what's different: wherever A's color differs from B's by more than a threshold, the pixel stays exactly as it is in A; everywhere else becomes transparent.
+
+- Difference threshold measured in Lab ΔE, hard edges (each pixel is all-or-nothing)
+- Cleanup: remove small islands, fill small holes
+- Invert (keep what did *not* change), and optional crop to the remaining content
+- Sizes must match exactly — otherwise it flags an error and won't run
+- Folder mode: pick a folder of bases (A) and a folder to subtract (B); images are paired by file name and exported as one PNG each in a `.zip`, with unpaired / mismatched ones skipped and reported
+- Named presets. Not available in Sequence, since it needs two images
 
 ## 🚀 Usage
 

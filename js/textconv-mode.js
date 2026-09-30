@@ -20,7 +20,7 @@
   let files = [];
   let srcUrl = null, dlUrl = null;
 
-  function relPathOf(f){ return f.webkitRelativePath || f.relPath || f.name; }
+  const relPathOf = PM.fileUtils.relPathOf;
   function baseName(name){
     const dot = name.lastIndexOf('.');
     return dot===-1 ? name : name.slice(0, dot);
@@ -37,34 +37,13 @@
     statsEl.innerHTML = `<span>imágenes cargadas: <b>${files.length}</b></span>`;
   }
 
-  // Lee archivos sueltos y carpetas (recursivo) de un drop. webkitGetAsEntry tiene que
-  // llamarse de forma síncrona sobre todos los items, antes de cualquier await.
-  async function collectFromDrop(dataTransfer){
-    const entries = Array.from(dataTransfer.items).map(it=>it.webkitGetAsEntry && it.webkitGetAsEntry()).filter(Boolean);
-    const out = [];
-    async function readEntry(entry, path){
-      if(entry.isFile){
-        await new Promise(res=>entry.file(f=>{ f.relPath = path+f.name; out.push(f); res(); }, res));
-      } else if(entry.isDirectory){
-        const reader = entry.createReader();
-        for(;;){
-          const batch = await new Promise(res=>reader.readEntries(res, ()=>res([])));
-          if(!batch.length) break;
-          for(const ent of batch) await readEntry(ent, path+entry.name+'/');
-        }
-      }
-    }
-    for(const ent of entries) await readEntry(ent, '');
-    return out;
-  }
-
   drop.addEventListener('click', ()=>fileInput.click());
   folderBtn.addEventListener('click', ()=>folderInput.click());
   drop.addEventListener('dragover', e=>{ e.preventDefault(); drop.classList.add('drag'); });
   drop.addEventListener('dragleave', ()=> drop.classList.remove('drag'));
   drop.addEventListener('drop', async e=>{
     e.preventDefault(); drop.classList.remove('drag');
-    setFiles(await collectFromDrop(e.dataTransfer));
+    setFiles(await PM.fileUtils.collectFromDrop(e.dataTransfer));
   });
   fileInput.addEventListener('change', e=>{ if(e.target.files.length) setFiles(Array.from(e.target.files)); });
   folderInput.addEventListener('change', e=>{ if(e.target.files.length) setFiles(Array.from(e.target.files)); });

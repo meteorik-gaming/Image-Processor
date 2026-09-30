@@ -4,6 +4,14 @@ English | 🌐 [Versión en Español](CHANGELOG-ES.md)
 
 All notable changes to this project are documented here.
 
+## v1.3 — Subtract
+
+- New **Subtract** tool: subtracts image B from image A (same exact size) and
+  exports a PNG with only the pixels that differ (Lab ΔE threshold, hard edges),
+  everything else transparent. Island removal / hole filling, invert, crop to
+  content, folder mode pairing images by file name into a `.zip`, named presets.
+  Size mismatches are flagged as an error. Not available in Sequence
+
 ## v1.2 — Text Converter
 
 - New **Text Converter** tool: turns an image into text (ASCII art) using a

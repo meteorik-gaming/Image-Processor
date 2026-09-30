@@ -1,4 +1,4 @@
-# Image Processor v1.2
+# Image Processor v1.3
 
 🌐 [English version](README.md) | Español | 📝 [Changelog](CHANGELOG-ES.md)
 
@@ -52,6 +52,17 @@ Convierte una imagen en texto (ASCII art y similares): cada pixel se vuelve el s
 - Avisa (nunca bloquea) si dos colores comparten símbolo, si un símbolo está vacío o si tiene más de un carácter (un emoji cuenta como uno)
 - Suelta varias imágenes o una carpeta para obtener un archivo por imagen dentro de un `.zip`
 - Presets nombrados, igual que los demás tools — y usable como bloque en Sequence, **solo como último bloque** (su salida es texto, así que nada puede ir después; ponerlo antes se marca como error y bloquea la corrida)
+
+### ➖ Subtract
+
+Resta la imagen B de la imagen A (ambas exactamente del mismo tamaño) y devuelve un PNG con solo lo que es distinto: donde el color de A difiere del de B por más que un umbral, el pixel se queda tal cual está en A; en todo lo demás queda transparente.
+
+- Umbral de diferencia medido en Lab ΔE, bordes duros (cada pixel es todo o nada)
+- Limpieza: quitar islas chicas, rellenar huecos chicos
+- Invertir (quedarse con lo que *no* cambió) y recorte opcional al contenido que quedó
+- Los tamaños deben coincidir exacto — si no, marca error y no corre
+- Modo carpetas: elige una carpeta de bases (A) y otra a restar (B); se emparejan por nombre de archivo y salen como un PNG por par en un `.zip`, saltando y reportando las que no tengan pareja o midan distinto
+- Presets nombrados. No está disponible en Sequence, porque necesita dos imágenes
 
 ## 🚀 Uso
 

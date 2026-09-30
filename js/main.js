@@ -9,4 +9,5 @@
   PM.pixelateUi.init();
   PM.sequenceUi.init();
   PM.textconvUi.init();
+  PM.subtractUi.init();
 })();

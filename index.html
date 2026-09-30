@@ -2,14 +2,14 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Image Processor v1.2 — palette matching, pixelate + text</title>
+<title>Image Processor v1.3 — palette matching, pixelate, text + subtract</title>
 <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
 
 <header>
-  <h1>IMAGE PROCESSOR v1.2</h1>
-  <span>Palette Matcher · Pixelate · Sequence · Text Converter — cada tool con su propio panel, abajo</span>
+  <h1>IMAGE PROCESSOR v1.3</h1>
+  <span>Palette Matcher · Pixelate · Sequence · Text Converter · Subtract — cada tool con su propio panel, abajo</span>
 </header>
 
 <div class="tool-tabs">
@@ -17,6 +17,7 @@
   <div class="tool-tab active" data-tool="palette">🎨 Palette Matcher</div>
   <div class="tool-tab" data-tool="pixelate">🔲 Pixelate</div>
   <div class="tool-tab" data-tool="textconv">🔤 Text Converter</div>
+  <div class="tool-tab" data-tool="subtract">➖ Subtract</div>
 </div>
 
 <div class="tool-view active" id="tool-palette">
@@ -612,6 +613,117 @@
 </div>
 <!-- /tool-textconv -->
 
+<div class="tool-view" id="tool-subtract">
+<div class="layout">
+  <div class="panel">
+
+    <div class="section" id="sec-subtract-diff">
+      <h2>Diferencia</h2>
+      <div class="field">
+        <label><span>umbral de diferencia (color, Lab ΔE)</span><span id="subtractThresholdVal">10</span></label>
+        <input type="range" id="subtractThreshold" min="0" max="60" value="10" step="1">
+      </div>
+      <div class="hint">Un pixel de A se queda (tal cual está en A) si su color difiere de B por más que este umbral; si no, queda transparente. Borde duro: cada pixel es todo o nada. Sube el umbral si sobra ruido (ej. compresión JPG); bájalo si se están perdiendo diferencias sutiles. Donde A es transparente nunca queda nada, y donde B es transparente pero A no, cuenta como diferencia.</div>
+      <div class="toggle-row">
+        <input type="checkbox" id="subtractInvert">
+        <label for="subtractInvert">invertir (quedarse con lo que NO cambió)</label>
+      </div>
+    </div>
+
+    <div class="section" id="sec-subtract-cleanup">
+      <h2>Limpieza</h2>
+      <div class="field">
+        <label><span>quitar islas menores a</span><span id="subtractMinIslandVal">off</span></label>
+        <input type="range" id="subtractMinIsland" min="0" max="100" value="0" step="1">
+      </div>
+      <div class="field">
+        <label><span>rellenar huecos menores a</span><span id="subtractFillHolesVal">off</span></label>
+        <input type="range" id="subtractFillHoles" min="0" max="100" value="0" step="1">
+      </div>
+      <div class="hint">Islas: grupos sueltos de pixeles que se quedaron, de menos de N pixeles, se borran. Huecos: grupos chicos de pixeles transparentes rodeados por lo que se quedó se rellenan con el pixel de A. 0 = apagado.</div>
+    </div>
+
+    <div class="section" id="sec-subtract-output">
+      <h2>Salida</h2>
+      <div class="toggle-row">
+        <input type="checkbox" id="subtractCrop">
+        <label for="subtractCrop">recortar el PNG al contenido que quedó</label>
+      </div>
+    </div>
+
+    <div class="section" id="sec-subtract-presets">
+      <h2>Presets <span class="badge">localStorage</span></h2>
+      <select id="subtractPresetSelect"><option value="">— cargar preset —</option></select>
+      <div class="preset-row">
+        <input type="text" id="subtractPresetName" placeholder="nombre del preset nuevo">
+        <button id="subtractPresetSaveBtn">Guardar</button>
+        <button id="subtractPresetDeleteBtn">Borrar</button>
+      </div>
+      <div class="hint">La configuración actual se autoguarda todo el tiempo. Este tool necesita dos imágenes, por eso no está disponible como bloque en Sequence.</div>
+    </div>
+
+  </div>
+
+  <div class="main">
+    <div class="mode-tabs">
+      <div class="mode-tab active" data-mode-group="subtract" data-mode="single">Par de imágenes</div>
+      <div class="mode-tab" data-mode-group="subtract" data-mode="batch">Carpetas (batch por pares)</div>
+    </div>
+
+    <div class="mode-panel active" data-mode-group="subtract" id="subtractMode-single">
+      <div class="images">
+        <div class="drop" id="subtractDropA">
+          <div>Imagen A (base — de aquí sale lo que queda)</div>
+          <div class="hint" id="subtractLabelA">arrastra o haz click</div>
+          <img id="subtractImgA" style="display:none; margin:10px auto 0;">
+        </div>
+        <div class="drop" id="subtractDropB">
+          <div>Imagen B (la que se resta)</div>
+          <div class="hint" id="subtractLabelB">arrastra o haz click</div>
+          <img id="subtractImgB" style="display:none; margin:10px auto 0;">
+        </div>
+      </div>
+      <input type="file" id="subtractFileA" accept="image/*" style="display:none">
+      <input type="file" id="subtractFileB" accept="image/*" style="display:none">
+      <div class="warn-box error" id="subtractSizeError" style="display:none;"></div>
+      <button class="run-btn" id="subtractRunBtn" disabled>Restar</button>
+      <figure>
+        <figcaption>resultado (PNG con transparencia)</figcaption>
+        <div class="imgwrap"><canvas id="subtractOutCanvas" style="display:none"></canvas></div>
+      </figure>
+      <div class="stats" id="subtractStats"></div>
+      <div class="btn-row">
+        <a class="dl" id="subtractDlBtn" style="display:none" download="subtracted.png">Descargar PNG</a>
+      </div>
+    </div>
+
+    <div class="mode-panel" data-mode-group="subtract" id="subtractMode-batch">
+      <div class="images">
+        <div>
+          <div class="drop" id="subtractFolderDropA">Carpeta A (bases) — arrastra aquí o haz click</div>
+          <div class="hint" id="subtractFolderInfoA">sin imágenes</div>
+          <button class="mini-btn" id="subtractFolderBtnA">elegir carpeta A…</button>
+        </div>
+        <div>
+          <div class="drop" id="subtractFolderDropB">Carpeta B (a restar) — arrastra aquí o haz click</div>
+          <div class="hint" id="subtractFolderInfoB">sin imágenes</div>
+          <button class="mini-btn" id="subtractFolderBtnB">elegir carpeta B…</button>
+        </div>
+      </div>
+      <input type="file" id="subtractFolderInputA" webkitdirectory multiple style="display:none">
+      <input type="file" id="subtractFolderInputB" webkitdirectory multiple style="display:none">
+      <div class="hint">Las imágenes se emparejan por nombre de archivo (sin importar la extensión, y respetando subcarpetas). Las que no tengan pareja, o cuyas dos versiones midan distinto, se saltan y se reportan abajo.</div>
+      <div class="progress"><div id="subtractProgressBar"></div></div>
+      <button class="run-btn" id="subtractBatchRunBtn" disabled>Restar carpetas</button>
+      <div class="stats" id="subtractBatchStats"></div>
+      <div class="filelist" id="subtractBatchLog" style="display:none;"></div>
+      <a class="dl" id="subtractBatchDlBtn" style="display:none" download="subtracted.zip">Descargar .zip</a>
+    </div>
+  </div>
+</div>
+</div>
+<!-- /tool-subtract -->
+
 <script src="vendor/jszip.min.js"></script>
 <script src="js/color-math.js"></script>
 <script src="js/ramp.js"></script>
@@ -631,9 +743,13 @@
 <script src="js/pixelate-mode.js"></script>
 <script src="js/sequence.js"></script>
 <script src="js/sequence-mode.js"></script>
+<script src="js/file-utils.js"></script>
 <script src="js/textconv.js"></script>
 <script src="js/textconv-ui.js"></script>
 <script src="js/textconv-mode.js"></script>
+<script src="js/subtract.js"></script>
+<script src="js/subtract-ui.js"></script>
+<script src="js/subtract-mode.js"></script>
 <script src="js/main.js"></script>
 
 </body>
