@@ -1,4 +1,4 @@
-# Image Processor v1.3
+# Image Processor v1.3.1
 
 English | 🌐 [Versión en Español](README-ES.md) | 📝 [Changelog](CHANGELOG.md)
 

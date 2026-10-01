@@ -4,6 +4,13 @@
 
 Todos los cambios importantes del proyecto quedan documentados acá.
 
+## v1.3.1 — Batch en Pixelate
+
+- **Pixelate** ahora tiene modo carpeta (batch) como los demás tools: elige o
+  arrastra una carpeta (respeta subcarpetas), escoge el formato de salida (igual
+  al original, PNG o JPG) y descarga un `.zip` con los resultados, usando la
+  configuración actual
+
 ## v1.3 — Subtract
 
 - Nuevo tool **Subtract**: resta la imagen B de la imagen A (mismo tamaño exacto)

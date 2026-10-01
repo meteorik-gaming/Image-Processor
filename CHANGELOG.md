@@ -4,6 +4,12 @@ English | 🌐 [Versión en Español](CHANGELOG-ES.md)
 
 All notable changes to this project are documented here.
 
+## v1.3.1 — Pixelate batch
+
+- **Pixelate** now has a folder (batch) mode like the other tools: pick or drop a
+  folder (subfolders respected), choose the output format (same as original, PNG
+  or JPG) and download a `.zip` with the results, using the current settings
+
 ## v1.3 — Subtract
 
 - New **Subtract** tool: subtracts image B from image A (same exact size) and
