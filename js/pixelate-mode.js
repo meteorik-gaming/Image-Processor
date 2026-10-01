@@ -83,4 +83,108 @@
       PM.tools.switchTo('palette');
     }, 'image/png');
   });
+
+  // ---------- selector de vista (propio, igual que Subtract) ----------
+  document.querySelectorAll('.mode-tab[data-mode-group="pixelate"]').forEach(tab=>{
+    tab.addEventListener('click', ()=>{
+      document.querySelectorAll('.mode-tab[data-mode-group="pixelate"]').forEach(t=>t.classList.toggle('active', t===tab));
+      document.querySelectorAll('.mode-panel[data-mode-group="pixelate"]').forEach(p=>p.classList.toggle('active', p.id==='pixelateMode-'+tab.dataset.mode));
+    });
+  });
+
+  // ---------- vista: carpeta (batch) ----------
+  // Pixelate corre en el hilo principal (sin workers), así que el batch es en serie.
+  const folderDrop = document.getElementById('pixelateFolderDrop');
+  const folderInput = document.getElementById('pixelateFolderInput');
+  const fileListBox = document.getElementById('pixelateFileListBox');
+  const batchFormatEl = document.getElementById('pixelateBatchFormat');
+  const progressBar = document.getElementById('pixelateProgressBar');
+  const batchRunBtn = document.getElementById('pixelateBatchRunBtn');
+  const batchStatsEl = document.getElementById('pixelateBatchStats');
+  const batchDlBtn = document.getElementById('pixelateBatchDlBtn');
+
+  let batchFiles = [];
+  let zipUrl = null;
+  const relPathOf = f => PM.fileUtils.relPathOf(f);
+
+  function setBatchFiles(list){
+    batchFiles = list.filter(f=>f.type.startsWith('image/'));
+    if(batchFiles.length===0){ fileListBox.textContent = 'ningún archivo seleccionado'; batchRunBtn.disabled = true; return; }
+    fileListBox.innerHTML = batchFiles.map(f=>`<div>${relPathOf(f)}</div>`).join('');
+    batchRunBtn.disabled = false;
+  }
+
+  folderDrop.addEventListener('click', ()=>folderInput.click());
+  folderInput.addEventListener('change', e=>setBatchFiles(Array.from(e.target.files)));
+  folderDrop.addEventListener('dragover', e=>{ e.preventDefault(); folderDrop.classList.add('drag'); });
+  folderDrop.addEventListener('dragleave', ()=> folderDrop.classList.remove('drag'));
+  folderDrop.addEventListener('drop', async e=>{
+    e.preventDefault(); folderDrop.classList.remove('drag');
+    setBatchFiles(await PM.fileUtils.collectFromDrop(e.dataTransfer));
+  });
+
+  function splitExt(filename){
+    const dot = filename.lastIndexOf('.');
+    return dot===-1 ? [filename, 'png'] : [filename.slice(0,dot), filename.slice(dot+1).toLowerCase()];
+  }
+
+  // runToFile siempre devuelve PNG; si el destino es otro formato, se reencodea por canvas.
+  async function encodeAs(pngFile, ext){
+    if(ext==='png') return pngFile;
+    const mime = (ext==='jpg'||ext==='jpeg') ? 'image/jpeg' : ext==='webp' ? 'image/webp' : 'image/png';
+    const bmp = await createImageBitmap(pngFile);
+    const c = document.createElement('canvas');
+    c.width = bmp.width; c.height = bmp.height;
+    const ctx = c.getContext('2d');
+    if(mime==='image/jpeg'){ ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height); }
+    ctx.drawImage(bmp, 0, 0);
+    return new Promise(res=>c.toBlob(res, mime, 0.92));
+  }
+
+  batchRunBtn.addEventListener('click', async ()=>{
+    if(batchFiles.length===0) return;
+    batchRunBtn.disabled = true;
+    batchDlBtn.style.display = 'none';
+    if(zipUrl){ URL.revokeObjectURL(zipUrl); zipUrl = null; }
+    const t0 = performance.now();
+    const opts = PM.pixelateUi.currentOpts();
+    const fmtOverride = batchFormatEl.value;
+    const zip = new JSZip();
+    let done = 0, failed = 0;
+    const total = batchFiles.length;
+
+    function updateProgress(){
+      progressBar.style.width = Math.round(((done+failed)/total)*100)+'%';
+      batchStatsEl.innerHTML =
+        `<span>procesados: <b>${done}/${total}</b></span>` +
+        (failed?`<span>fallidos: <b>${failed}</b></span>`:'');
+    }
+    updateProgress();
+
+    for(const file of batchFiles){
+      const relPath = relPathOf(file);
+      const dir = relPath.includes('/') ? relPath.slice(0, relPath.lastIndexOf('/')+1) : '';
+      const [base, origExt] = splitExt(relPath.split('/').pop());
+      const ext = fmtOverride==='same' ? origExt : fmtOverride;
+      try{
+        const png = await PM.pixelate.runToFile(file, opts);
+        zip.file(dir + base + '_pixelated.' + ext, await encodeAs(png, ext));
+        done++;
+      } catch(err){
+        console.error('Fallo pixelando', relPath, err);
+        failed++;
+      }
+      updateProgress();
+    }
+
+    const zipBlob = await zip.generateAsync({type:'blob'});
+    zipUrl = URL.createObjectURL(zipBlob);
+    batchDlBtn.href = zipUrl;
+    batchDlBtn.style.display = 'inline-block';
+    batchStatsEl.innerHTML =
+      `<span>procesados: <b>${done}/${total}</b></span>` +
+      (failed?`<span>fallidos: <b>${failed}</b></span>`:'') +
+      `<span>tiempo total: <b>${((performance.now()-t0)/1000).toFixed(1)} s</b></span>`;
+    batchRunBtn.disabled = false;
+  });
 })();

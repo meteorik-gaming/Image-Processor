@@ -431,6 +431,12 @@
   </div>
 
   <div class="main">
+    <div class="mode-tabs">
+      <div class="mode-tab active" data-mode-group="pixelate" data-mode="single">Imagen individual</div>
+      <div class="mode-tab" data-mode-group="pixelate" data-mode="batch">Carpeta (batch)</div>
+    </div>
+
+    <div class="mode-panel active" data-mode-group="pixelate" id="pixelateMode-single">
     <div class="drop" id="pixelateDrop">Arrastra una imagen aquí, o haz click para elegir archivo</div>
     <input type="file" id="pixelateFileInput" accept="image/*" style="display:none">
     <div class="images" id="pixelateImagesGrid">
@@ -453,6 +459,25 @@
       <a class="dl" id="pixelateDlBtn" style="display:none" download="pixelated.png">Descargar</a>
     </div>
     <button class="run-btn secondary" id="sendToPaletteBtn" style="display:none">Enviar a Palette Matcher →</button>
+    </div>
+
+    <div class="mode-panel" data-mode-group="pixelate" id="pixelateMode-batch">
+      <div class="drop" id="pixelateFolderDrop">Arrastra una carpeta aquí, o haz click para elegir</div>
+      <input type="file" id="pixelateFolderInput" webkitdirectory multiple style="display:none">
+      <div class="filelist" id="pixelateFileListBox">ningún archivo seleccionado</div>
+      <div class="field">
+        <label><span>formato de salida</span></label>
+        <select id="pixelateBatchFormat">
+          <option value="same">mismo que el original</option>
+          <option value="png">PNG</option>
+          <option value="jpg">JPG</option>
+        </select>
+      </div>
+      <div class="progress"><div id="pixelateProgressBar"></div></div>
+      <button class="run-btn" id="pixelateBatchRunBtn" disabled>Pixelar carpeta</button>
+      <div class="stats" id="pixelateBatchStats"></div>
+      <a class="dl" id="pixelateBatchDlBtn" style="display:none" download="pixelated.zip">Descargar .zip</a>
+    </div>
   </div>
 </div>
 </div>
