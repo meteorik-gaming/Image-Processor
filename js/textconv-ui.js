@@ -10,6 +10,7 @@
   const swatchesEl = $('textconvSwatches');
   const copySourceEl = $('textconvCopySource');
   const transparentSymbolEl = $('textconvTransparentSymbol');
+  const alphaEl = $('textconvAlpha'), alphaValEl = $('textconvAlphaVal');
   const warningsEls = [$('textconvWarnings'), $('textconvWarningsMain')];
   const gridColsEl = $('textconvCols'), gridColsValEl = $('textconvColsVal');
   const gridRowsEl = $('textconvRows'), gridRowsValEl = $('textconvRowsVal');
@@ -117,6 +118,8 @@
   });
 
   transparentSymbolEl.addEventListener('input', renderWarnings);
+  function updateAlphaLabel(){ alphaValEl.textContent = alphaEl.value + '%'; }
+  alphaEl.addEventListener('input', updateAlphaLabel);
 
   // ---------- grid / salida ----------
   function updateSizeLabels(){
@@ -154,6 +157,7 @@
     return {
       palette: palette.map(e=>({ hex:e.hex, symbol:e.symbol })),
       transparentSymbol: transparentSymbolEl.value,
+      alphaThreshold: +alphaEl.value,
       gridCols: +gridColsEl.value,
       gridRows: +gridRowsEl.value,
       gridLock: gridLockEl.checked,
@@ -169,6 +173,8 @@
       palette = cfg.palette.map(e=>({ hex:e.hex, symbol:String(e.symbol==null ? '' : e.symbol) }));
     }
     if(cfg.transparentSymbol!=null) transparentSymbolEl.value = cfg.transparentSymbol;
+    alphaEl.value = cfg.alphaThreshold!=null ? cfg.alphaThreshold : PM.textconv.DEFAULT_ALPHA_THRESHOLD;
+    updateAlphaLabel();
     if(cfg.gridCols!=null) gridColsEl.value = cfg.gridCols;
     if(cfg.gridRows!=null) gridRowsEl.value = cfg.gridRows;
     if(cfg.gridLock!=null) gridLockEl.checked = cfg.gridLock;

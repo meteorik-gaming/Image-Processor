@@ -4,6 +4,15 @@ English | 🌐 [Versión en Español](CHANGELOG-ES.md)
 
 All notable changes to this project are documented here.
 
+## v1.3.3 — Sequence batch + Text Converter alpha threshold
+
+- **Sequence** now has a folder (batch) mode: every image goes through all the
+  blocks and you get one `.zip` per step, so any intermediate stage can be
+  reviewed or reused. Images that fail are skipped and counted
+- **Text Converter**: new transparency threshold slider (default 50%) — pixels
+  with alpha below it count as transparent and use the transparent symbol. Saved
+  in presets; older presets keep the previous 50% behavior
+
 ## v1.3.1 — Pixelate batch
 
 - **Pixelate** now has a folder (batch) mode like the other tools: pick or drop a

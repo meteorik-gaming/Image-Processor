@@ -4,6 +4,16 @@
 
 Todos los cambios importantes del proyecto quedan documentados acá.
 
+## v1.3.3 — Batch en Sequence + umbral de alfa en Text Converter
+
+- **Sequence** ahora tiene modo carpeta (batch): cada imagen pasa por todos los
+  bloques y se genera un `.zip` por paso, para revisar o reutilizar cualquier
+  etapa intermedia. Las imágenes que fallan se saltan y se cuentan
+- **Text Converter**: nuevo slider de umbral de transparencia (por defecto 50%) —
+  los pixeles con alfa menor cuentan como transparentes y usan el símbolo de
+  transparente. Se guarda en los presets; los presets viejos mantienen el
+  comportamiento anterior de 50%
+
 ## v1.3.1 — Batch en Pixelate
 
 - **Pixelate** ahora tiene modo carpeta (batch) como los demás tools: elige o

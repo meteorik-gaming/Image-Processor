@@ -2,13 +2,13 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Image Processor v1.3.1 — palette matching, pixelate, text + subtract</title>
+<title>Image Processor v1.3.3 — palette matching, pixelate, text + subtract</title>
 <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
 
 <header>
-  <h1>IMAGE PROCESSOR v1.3.1</h1>
+  <h1>IMAGE PROCESSOR v1.3.3</h1>
   <span>Palette Matcher · Pixelate · Sequence · Text Converter · Subtract — cada tool con su propio panel, abajo</span>
 </header>
 
@@ -497,6 +497,12 @@
   </div>
 
   <div class="main">
+    <div class="mode-tabs">
+      <div class="mode-tab active" data-mode-group="sequence" data-mode="single">Imagen individual</div>
+      <div class="mode-tab" data-mode-group="sequence" data-mode="batch">Carpeta (batch)</div>
+    </div>
+
+    <div class="mode-panel active" data-mode-group="sequence" id="sequenceMode-single">
     <div class="drop" id="sequenceDrop">Arrastra una imagen aquí, o haz click para elegir archivo</div>
     <input type="file" id="sequenceFileInput" accept="image/*" style="display:none">
     <div class="images" id="sequenceImagesGrid">
@@ -513,6 +519,18 @@
         <option value="jpg">JPG</option>
       </select>
       <a class="dl" id="sequenceDlBtn" style="display:none" download="sequence-result.png">Descargar</a>
+    </div>
+    </div>
+
+    <div class="mode-panel" data-mode-group="sequence" id="sequenceMode-batch">
+      <div class="drop" id="sequenceFolderDrop">Arrastra una carpeta aquí, o haz click para elegir</div>
+      <input type="file" id="sequenceFolderInput" webkitdirectory multiple style="display:none">
+      <div class="filelist" id="sequenceFileListBox">ningún archivo seleccionado</div>
+      <div class="hint">Cada imagen pasa por todos los bloques. Se genera un .zip por paso (el resultado de ese bloque para todas las imágenes), así puedes revisar o usar cualquier etapa intermedia.</div>
+      <div class="progress"><div id="sequenceProgressBar"></div></div>
+      <button class="run-btn" id="sequenceBatchRunBtn" disabled>Correr secuencia en la carpeta</button>
+      <div class="stats" id="sequenceBatchStats"></div>
+      <div id="sequenceBatchDownloads" style="display:flex; flex-direction:column; gap:4px;"></div>
     </div>
   </div>
 </div>
@@ -538,6 +556,10 @@
       <div class="field" style="margin-top:12px;">
         <label><span>símbolo para pixeles transparentes</span></label>
         <input type="text" id="textconvTransparentSymbol" class="symbol-input" value=" " placeholder="(vacío = nada)">
+      </div>
+      <div class="field">
+        <label><span>umbral de transparencia (alfa menor a esto cuenta como transparente)</span><span id="textconvAlphaVal">50%</span></label>
+        <input type="range" id="textconvAlpha" min="0" max="100" value="50" step="1">
       </div>
       <div class="warn-box" id="textconvWarnings" style="display:none;"></div>
       <div class="hint">Cada píxel de la imagen (ya reducido al grid) se convierte al símbolo del color de la paleta más cercano. El símbolo puede ser cualquier texto — un emoji cuenta como un solo carácter. Los avisos solo informan, nunca bloquean la conversión.</div>

@@ -17,6 +17,10 @@
   const dlBtn = document.getElementById('sequenceDlBtn');
   const dlFormatEl = document.getElementById('sequenceDlFormat');
 
+  const batchRunBtn = document.getElementById('sequenceBatchRunBtn');
+  let batchFiles = [];
+  let batchRunning = false;
+
   let blocks = []; // [{tool, preset}]
   let loadedFile = null;
   let lastCanvas = null;
@@ -25,8 +29,12 @@
 
   const scheduleAutosave = PM.presets.debounce(()=>{ store.saveLastConfig({ blocks }); }, 400);
 
+  function sequenceReady(){
+    return blocks.length>0 && !blocks.some(b=>!b.preset) && PM.validateSequence(blocks).length===0;
+  }
   function updateRunEnabled(){
-    runBtn.disabled = !loadedFile || blocks.length===0 || blocks.some(b=>!b.preset) || PM.validateSequence(blocks).length>0;
+    runBtn.disabled = !loadedFile || !sequenceReady();
+    batchRunBtn.disabled = batchRunning || batchFiles.length===0 || !sequenceReady();
   }
 
   function renderBlocks(){
@@ -234,6 +242,110 @@
     dlBtn.style.display = 'inline-block';
   }
   dlFormatEl.addEventListener('change', refreshDownloadLink);
+
+  // ---------- selector de vista (propio, igual que Subtract) ----------
+  document.querySelectorAll('.mode-tab[data-mode-group="sequence"]').forEach(tab=>{
+    tab.addEventListener('click', ()=>{
+      document.querySelectorAll('.mode-tab[data-mode-group="sequence"]').forEach(t=>t.classList.toggle('active', t===tab));
+      document.querySelectorAll('.mode-panel[data-mode-group="sequence"]').forEach(p=>p.classList.toggle('active', p.id==='sequenceMode-'+tab.dataset.mode));
+    });
+  });
+
+  // ---------- vista: carpeta (batch) ----------
+  // Cada imagen corre la secuencia completa (una a la vez, para no tener todo en memoria
+  // a la vez) y el resultado de cada bloque se mete al .zip de ese paso.
+  const folderDrop = document.getElementById('sequenceFolderDrop');
+  const folderInput = document.getElementById('sequenceFolderInput');
+  const fileListBox = document.getElementById('sequenceFileListBox');
+  const progressBar = document.getElementById('sequenceProgressBar');
+  const batchStatsEl = document.getElementById('sequenceBatchStats');
+  const downloadsEl = document.getElementById('sequenceBatchDownloads');
+  const relPathOf = f => PM.fileUtils.relPathOf(f);
+  let batchUrls = [];
+
+  function setBatchFiles(list){
+    batchFiles = list.filter(f=>f.type.startsWith('image/'));
+    fileListBox.innerHTML = batchFiles.length
+      ? batchFiles.map(f=>`<div>${relPathOf(f)}</div>`).join('')
+      : 'ningún archivo seleccionado';
+    updateRunEnabled();
+  }
+  folderDrop.addEventListener('click', ()=>folderInput.click());
+  folderInput.addEventListener('change', e=>setBatchFiles(Array.from(e.target.files)));
+  folderDrop.addEventListener('dragover', e=>{ e.preventDefault(); folderDrop.classList.add('drag'); });
+  folderDrop.addEventListener('dragleave', ()=> folderDrop.classList.remove('drag'));
+  folderDrop.addEventListener('drop', async e=>{
+    e.preventDefault(); folderDrop.classList.remove('drag');
+    setBatchFiles(await PM.fileUtils.collectFromDrop(e.dataTransfer));
+  });
+
+  batchRunBtn.addEventListener('click', async ()=>{
+    if(batchFiles.length===0 || !sequenceReady()) return;
+    batchRunning = true;
+    updateRunEnabled();
+    batchUrls.forEach(u=>URL.revokeObjectURL(u)); batchUrls = [];
+    downloadsEl.innerHTML = '';
+    const t0 = performance.now();
+    const zips = blocks.map(()=>new JSZip());
+    const total = batchFiles.length;
+    let done = 0, failed = 0;
+
+    function updateProgress(){
+      progressBar.style.width = Math.round(((done+failed)/total)*100)+'%';
+      batchStatsEl.innerHTML =
+        `<span>procesadas: <b>${done}/${total}</b></span>` +
+        (failed?`<span>fallidas: <b>${failed}</b></span>`:'');
+    }
+    updateProgress();
+
+    for(const file of batchFiles){
+      const relPath = relPathOf(file);
+      const dot = relPath.lastIndexOf('.');
+      const stem = dot>relPath.lastIndexOf('/') ? relPath.slice(0, dot) : relPath;
+      let current = file;
+      try{
+        // Los resultados se arman completos antes de tocar los zips: si un bloque falla,
+        // esa imagen no deja archivos a medias en los pasos anteriores.
+        const outputs = [];
+        for(let i=0;i<blocks.length;i++){
+          const { tool, preset } = blocks[i];
+          if(PM.pipelineTools[tool].terminal){
+            const res = await PM.pipelineTools[tool].runText(current, preset);
+            outputs.push({ name: stem+'.'+res.ext, data: res.text });
+          } else {
+            current = await PM.pipelineTools[tool].run(current, preset);
+            outputs.push({ name: stem+'.png', data: current });
+          }
+        }
+        outputs.forEach((o,i)=>zips[i].file(o.name, o.data));
+        done++;
+      } catch(err){
+        console.error('Fallo procesando', relPath, err);
+        failed++;
+      }
+      updateProgress();
+      await new Promise(r=>setTimeout(r, 0)); // deja respirar a la UI entre imágenes
+    }
+
+    for(let i=0;i<blocks.length;i++){
+      const { tool, preset } = blocks[i];
+      const blob = await zips[i].generateAsync({ type:'blob' });
+      const url = URL.createObjectURL(blob);
+      batchUrls.push(url);
+      const a = document.createElement('a');
+      a.className = 'dl';
+      a.href = url;
+      a.download = `step-${i+1}-${tool}.zip`;
+      a.textContent = `Descargar .zip — paso ${i+1}: ${PM.pipelineTools[tool].label} (${preset})`;
+      downloadsEl.appendChild(a);
+    }
+    batchStatsEl.innerHTML =
+      `<span>procesadas: <b>${done}/${total}</b></span>` +
+      (failed?`<span>fallidas: <b>${failed}</b></span>`:'') +
+      `<span>tiempo total: <b>${((performance.now()-t0)/1000).toFixed(1)} s</b></span>`;
+    batchRunning = false;
+    updateRunEnabled();
+  });
 
   PM.sequenceUi = {
     init(){

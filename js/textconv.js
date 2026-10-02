@@ -6,7 +6,8 @@
   const textconv = PM.textconv = {};
   const { hexToRgb, rgbToLab, labDist2 } = PM.colorMath;
 
-  const ALPHA_CUTOFF = 128;
+  // Umbral de alfa por defecto (50%): un pixel con alfa por debajo cuenta como transparente.
+  textconv.DEFAULT_ALPHA_THRESHOLD = 50;
   const TRANSPARENT = -1;
 
   const segmenter = (typeof Intl!=='undefined' && Intl.Segmenter)
@@ -72,13 +73,15 @@
   }
 
   // Reduce imgData (w×h) a un grid gridCols×gridRows de índices de paleta (TRANSPARENT = -1
-  // para celdas mayormente transparentes). method 'majority' = voto de cada pixel por su
+  // para celdas mayormente transparentes; pixel transparente = alfa < opts.alphaThreshold %). method 'majority' = voto de cada pixel por su
   // color de paleta más cercano; 'mean' = promedia la celda y luego busca el más cercano.
   textconv.buildIndexGrid = function(imgData, w, h, opts, hexes){
     const { gridCols, gridRows, method } = opts;
     const data = imgData.data;
     const match = makeMatcher(hexes);
     const n = hexes.length;
+    const pct = opts.alphaThreshold==null ? textconv.DEFAULT_ALPHA_THRESHOLD : opts.alphaThreshold;
+    const alphaCutoff = Math.round(pct/100*255);
     const xBounds = buildBounds(w, gridCols);
     const yBounds = buildBounds(h, gridRows);
     const grid = new Int16Array(gridCols*gridRows);
@@ -95,14 +98,14 @@
         if(method==='mean'){
           for(let y=y0;y<y1;y++) for(let x=x0;x<x1;x++){
             const i = (y*w+x)*4;
-            if(data[i+3]<ALPHA_CUTOFF){ transparent++; continue; }
+            if(data[i+3]<alphaCutoff){ transparent++; continue; }
             sr+=data[i]; sg+=data[i+1]; sb+=data[i+2];
           }
         } else {
           counts.fill(0);
           for(let y=y0;y<y1;y++) for(let x=x0;x<x1;x++){
             const i = (y*w+x)*4;
-            if(data[i+3]<ALPHA_CUTOFF){ transparent++; continue; }
+            if(data[i+3]<alphaCutoff){ transparent++; continue; }
             counts[match(data[i], data[i+1], data[i+2])]++;
           }
         }
